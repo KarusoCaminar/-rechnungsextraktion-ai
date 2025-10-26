@@ -5,6 +5,8 @@ import { storage } from "./storage";
 import { extractInvoiceData, validateGermanVatId } from "./gemini-vertex";
 import type { InsertInvoice } from "@shared/schema";
 import pdfParse from "pdf-parse";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -122,6 +124,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload and process invoice
   app.post("/api/invoices/upload", upload.single("file"), async (req, res) => {
     try {
+      // Clean up old invoices before uploading new one
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      await db.execute(sql`DELETE FROM invoices WHERE uploaded_at < ${twentyFourHoursAgo}`);
+      
       if (!req.file) {
         return res.status(400).send("Keine Datei hochgeladen");
       }

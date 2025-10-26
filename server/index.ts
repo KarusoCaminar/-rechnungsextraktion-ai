@@ -18,9 +18,27 @@ async function initializeDatabase() {
     const { execSync } = await import('child_process');
     execSync('npm run db:push', { stdio: 'inherit' });
     log("✅ Database migrations completed");
+    
+    // Clean up old invoices (older than 24 hours)
+    await cleanupOldInvoices();
   } catch (error) {
     log(`⚠️ Database initialization warning: ${error}`);
     log("⚠️ Continuing startup, but database may need manual setup");
+  }
+}
+
+// Delete invoices older than 24 hours
+async function cleanupOldInvoices() {
+  try {
+    log("🔄 Cleaning up old invoices...");
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const result = await db.execute(sql`
+      DELETE FROM invoices 
+      WHERE uploaded_at < ${twentyFourHoursAgo}
+    `);
+    log(`✅ Cleaned up old invoices (${result.rowCount || 0} deleted)`);
+  } catch (error) {
+    log(`⚠️ Cleanup warning: ${error}`);
   }
 }
 
