@@ -102,40 +102,40 @@ export async function extractInvoiceData(
       throw new Error("Ungültige Dateidaten - Base64-Dekodierung fehlgeschlagen");
     }
 
-    const prompt = `Du bist ein Experte für die Extraktion von Rechnungsdaten aus deutschen Rechnungen.
-Analysiere dieses Rechnungsdokument und extrahiere die folgenden Informationen im JSON-Format:
+    const prompt = `You are an expert in extracting invoice data from invoices in any language (German, English, etc.).
+Analyze this invoice document and extract the following information in JSON format:
 
 {
-  "invoiceNumber": "Rechnungsnummer (z.B. RE-2024-001)",
-  "invoiceDate": "Rechnungsdatum im Format DD.MM.YYYY",
-  "supplierName": "Name des Lieferanten/Ausstellers",
-  "supplierAddress": "Vollständige Adresse des Lieferanten",
-  "supplierVatId": "USt-IdNr. oder Steuernummer (falls vorhanden, z.B. DE123456789)",
-  "subtotal": "Nettobetrag/Zwischensumme als Zahl (z.B. 1234.56)",
-  "vatRate": "Mehrwertsteuersatz als Zahl (z.B. 19 für 19%)",
-  "vatAmount": "Mehrwertsteuerbetrag als Zahl (z.B. 234.56)",
-  "totalAmount": "Gesamtbetrag/Bruttobetrag als Zahl (z.B. 1469.12)",
+  "invoiceNumber": "Invoice number (e.g. RE-2024-001, INV-12345)",
+  "invoiceDate": "Invoice date in DD.MM.YYYY format",
+  "supplierName": "Supplier/vendor name",
+  "supplierAddress": "Complete supplier address",
+  "supplierVatId": "VAT ID or tax number if present (e.g. DE123456789, GB123456789)",
+  "subtotal": "Net amount/subtotal as decimal number (e.g. 1234.56)",
+  "vatRate": "VAT/tax rate as number (e.g. 19 for 19%, 20 for 20%)",
+  "vatAmount": "VAT/tax amount as decimal number (e.g. 234.56)",
+  "totalAmount": "Total/gross amount as decimal number (e.g. 1469.12)",
   "lineItems": [
     {
-      "description": "Beschreibung der Position",
-      "quantity": Menge als Zahl,
-      "unitPrice": "Einzelpreis als String (z.B. '12,50 €')",
-      "total": "Gesamtpreis dieser Position als String (z.B. '25,00 €')"
+      "description": "Item description",
+      "quantity": quantity as number,
+      "unitPrice": "Unit price as string (e.g. '12.50 €', '$15.00')",
+      "total": "Line total as string (e.g. '25.00 €', '$30.00')"
     }
   ]
 }
 
-Wichtige Hinweise:
-- Alle Geldbeträge als Dezimalzahlen mit Punkt (nicht Komma)
-- Datum im Format DD.MM.YYYY
-- Falls ein Feld nicht gefunden wird, setze es auf null
-- Bei deutschen Rechnungen ist die MwSt. meist 19% oder 7%
-- Extrahiere ALLE Positionen aus der Rechnung für lineItems
-- WICHTIG: Bei mehrseitigen Dokumenten konzentriere dich auf die ERSTE SEITE mit der Hauptrechnung
-- Ignoriere Anhänge, Zahlungsbedingungen oder zusätzliche Seiten
-- Die relevanten Daten (Beträge, Positionen, Lieferant) stehen normalerweise auf Seite 1
+Important instructions:
+- ALL monetary amounts as decimal numbers with DOT (not comma) - e.g. 1234.56
+- Date in DD.MM.YYYY format regardless of original format
+- If a field is not found, set it to null
+- Extract ALL line items from the invoice
+- CRITICAL: For multi-page documents, focus on the FIRST PAGE with the main invoice
+- Ignore attachments, payment terms, or additional pages
+- Relevant data (amounts, line items, supplier) is usually on page 1
+- Works for invoices in ANY language (German, English, French, etc.)
 
-Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text.`;
+Respond ONLY with the JSON object, no additional text.`;
 
     const request = {
       contents: [
