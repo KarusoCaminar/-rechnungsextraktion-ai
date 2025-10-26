@@ -126,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Clean up old invoices before uploading new one
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      await db.execute(sql`DELETE FROM invoices WHERE uploaded_at < ${twentyFourHoursAgo}`);
+      await db.execute(sql`DELETE FROM invoices WHERE created_at < ${twentyFourHoursAgo}`);
       
       if (!req.file) {
         return res.status(400).send("Keine Datei hochgeladen");

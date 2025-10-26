@@ -34,7 +34,7 @@ async function cleanupOldInvoices() {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const result = await db.execute(sql`
       DELETE FROM invoices 
-      WHERE uploaded_at < ${twentyFourHoursAgo}
+      WHERE created_at < ${twentyFourHoursAgo}
     `);
     log(`✅ Cleaned up old invoices (${result.rowCount || 0} deleted)`);
   } catch (error) {
