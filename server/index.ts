@@ -1,8 +1,28 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 const app = express();
+
+// Auto-initialize database tables on startup
+async function initializeDatabase() {
+  try {
+    log("🔄 Checking database connection...");
+    await db.execute(sql`SELECT 1`);
+    log("✅ Database connected successfully");
+    
+    // Run migrations automatically
+    log("🔄 Running database migrations...");
+    const { execSync } = await import('child_process');
+    execSync('npm run db:push', { stdio: 'inherit' });
+    log("✅ Database migrations completed");
+  } catch (error) {
+    log(`⚠️ Database initialization warning: ${error}`);
+    log("⚠️ Continuing startup, but database may need manual setup");
+  }
+}
 
 // CORS Configuration for iframe embedding
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
@@ -71,6 +91,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize database first
+  await initializeDatabase();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
