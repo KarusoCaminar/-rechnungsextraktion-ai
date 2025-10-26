@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import { PDFPreview } from "@/components/pdf-preview";
+import { PDFThumbnail } from "@/components/pdf-thumbnail";
 
 // Sample invoices using the new templates
 const sampleInvoices = [
@@ -289,9 +291,11 @@ export default function Upload() {
                   >
                     <div className="flex-shrink-0">
                       {sample.isPDF ? (
-                        <div className="h-16 w-12 bg-muted rounded border flex items-center justify-center">
-                          <FileText className="h-6 w-6 text-muted-foreground" />
-                        </div>
+                        <PDFThumbnail
+                          fileData={sample.url}
+                          fileName={sample.name}
+                          className="h-16 w-12"
+                        />
                       ) : (
                         <img
                           src={sample.url}
@@ -319,25 +323,21 @@ export default function Upload() {
               <CardTitle>Vorschau</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-lg overflow-hidden bg-muted/20">
-                {selectedFile?.type === "application/pdf" ? (
-                  <div className="flex items-center justify-center h-96 bg-muted/30">
-                    <div className="text-center">
-                      <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        PDF-Vorschau nicht verfügbar
-                      </p>
-                    </div>
-                  </div>
-                ) : (
+              {selectedFile?.type === "application/pdf" ? (
+                <PDFPreview
+                  fileData={preview}
+                  fileName={selectedFile.name}
+                />
+              ) : (
+                <div className="border rounded-lg overflow-hidden bg-muted/20">
                   <img
                     src={preview}
                     alt="Vorschau"
                     className="w-full h-auto"
                     data-testid="img-preview"
                   />
-                )}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
