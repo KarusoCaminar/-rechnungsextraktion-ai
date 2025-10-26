@@ -53,10 +53,13 @@ export function PDFPreview({ fileData, fileName, className = '' }: PDFPreviewPro
   if (error) {
     return (
       <div className={`flex items-center justify-center h-96 bg-muted/30 rounded-lg border ${className}`}>
-        <div className="text-center">
+        <div className="text-center max-w-md px-4">
           <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">PDF-Vorschau nicht verfügbar</p>
-          <p className="text-xs text-muted-foreground mt-1">{fileName}</p>
+          <p className="text-sm font-medium text-muted-foreground mb-2">PDF-Vorschau nicht verfügbar</p>
+          <p className="text-xs text-muted-foreground mb-4">
+            Die PDF konnte nicht geladen werden. Dies kann an Browser-Einstellungen oder AdBlockern liegen.
+          </p>
+          <p className="text-xs text-muted-foreground">{fileName}</p>
         </div>
       </div>
     );

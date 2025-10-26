@@ -182,9 +182,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Invoice ${invoice.id} processed successfully`);
         } catch (error) {
           console.error(`Error processing invoice ${invoice.id}:`, error);
+          
+          // Provide user-friendly error messages
+          let userMessage = "Unbekannter Fehler bei der Verarbeitung";
+          if (error instanceof Error) {
+            if (error.message.includes("quota") || error.message.includes("limit")) {
+              userMessage = "API-Limit erreicht. Bitte versuchen Sie es später erneut.";
+            } else if (error.message.includes("credentials") || error.message.includes("authentication")) {
+              userMessage = "Authentifizierung fehlgeschlagen. Bitte kontaktieren Sie den Support.";
+            } else if (error.message.includes("timeout")) {
+              userMessage = "Zeitüberschreitung. Bitte versuchen Sie es erneut.";
+            } else if (error.message.includes("network") || error.message.includes("ECONNREFUSED")) {
+              userMessage = "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.";
+            } else {
+              userMessage = `Verarbeitung fehlgeschlagen: ${error.message}`;
+            }
+          }
+          
           await storage.updateInvoice(invoice.id, {
             status: "error",
-            errorMessage: error instanceof Error ? error.message : "Unbekannter Fehler bei der Verarbeitung",
+            errorMessage: userMessage,
           });
         }
       });

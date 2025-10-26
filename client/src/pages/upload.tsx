@@ -81,9 +81,39 @@ export default function Upload() {
     },
   });
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
+    // Handle rejected files
+    if (rejectedFiles.length > 0) {
+      const rejection = rejectedFiles[0];
+      if (rejection.errors[0]?.code === 'file-too-large') {
+        toast({
+          title: "Datei zu groß",
+          description: `Die Datei ist ${(rejection.file.size / 1024 / 1024).toFixed(1)} MB. Maximum sind 10 MB.`,
+          variant: "destructive",
+        });
+      } else if (rejection.errors[0]?.code === 'file-invalid-type') {
+        toast({
+          title: "Falsches Dateiformat",
+          description: "Bitte laden Sie nur JPG, PNG oder PDF Dateien hoch.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
+      
+      // Double-check file size
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "Datei zu groß",
+          description: `Die Datei ist ${(file.size / 1024 / 1024).toFixed(1)} MB. Maximum sind 10 MB.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setSelectedFile(file);
 
       // Create preview
@@ -93,7 +123,7 @@ export default function Upload() {
       };
       reader.readAsDataURL(file);
     }
-  }, []);
+  }, [toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
