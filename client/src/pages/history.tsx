@@ -4,6 +4,7 @@ import { Eye, Trash2, Download, FileText, Loader2, CheckCircle, Clock, XCircle }
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
@@ -184,6 +185,11 @@ export default function History() {
                         src={invoice.fileData}
                         alt={invoice.fileName}
                         className="h-20 w-16 object-cover rounded border"
+                      />
+                    ) : invoice.fileType === "application/pdf" ? (
+                      <PDFThumbnail
+                        fileData={invoice.fileData}
+                        fileName={invoice.fileName}
                       />
                     ) : (
                       <div className="h-20 w-16 bg-muted rounded border flex items-center justify-center">

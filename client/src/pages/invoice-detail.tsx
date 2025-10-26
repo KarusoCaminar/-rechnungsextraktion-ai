@@ -4,6 +4,7 @@ import { ArrowLeft, FileText, CheckCircle, XCircle, AlertCircle } from "lucide-r
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PDFPreview } from "@/components/pdf-preview";
 import type { Invoice } from "@shared/schema";
 
 export default function InvoiceDetail() {
@@ -115,11 +116,16 @@ export default function InvoiceDetail() {
                   className="w-full h-auto rounded-lg border"
                   data-testid="img-invoice-preview"
                 />
+              ) : invoice.fileType === "application/pdf" ? (
+                <PDFPreview 
+                  fileData={invoice.fileData}
+                  fileName={invoice.fileName}
+                />
               ) : (
                 <div className="flex items-center justify-center h-96 bg-muted/30 rounded-lg border">
                   <div className="text-center">
                     <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">PDF-Vorschau</p>
+                    <p className="text-sm text-muted-foreground">Vorschau nicht verfügbar</p>
                     <p className="text-xs text-muted-foreground mt-1">{invoice.fileName}</p>
                   </div>
                 </div>
