@@ -61,7 +61,8 @@ export default function Upload() {
       
       setSelectedFile(null);
       setPreview(null);
-      setLocation("/history");
+      // Redirect directly to invoice detail page for live processing view
+      setLocation(`/invoice/${invoice.id}`);
     },
     onError: (error: Error) => {
       toast({

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { ArrowLeft, FileText, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, FileText, CheckCircle, XCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,11 @@ export default function InvoiceDetail() {
   const { data: invoice, isLoading } = useQuery<Invoice>({
     queryKey: ["/api/invoices", invoiceId],
     enabled: !!invoiceId,
+    refetchInterval: (query) => {
+      const data = query.state.data as Invoice | undefined;
+      // Auto-refresh every 2 seconds if invoice is processing
+      return data?.status === 'processing' ? 2000 : false;
+    },
   });
 
   if (isLoading) {
@@ -101,6 +106,24 @@ export default function InvoiceDetail() {
           <p className="text-muted-foreground mt-1">{invoice.fileName}</p>
         </div>
       </div>
+
+      {invoice.status === "processing" && (
+        <Card className="border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/10">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-yellow-600 dark:text-yellow-400" />
+              <div>
+                <h3 className="text-lg font-semibold text-yellow-900 dark:text-yellow-100">
+                  KI extrahiert Rechnungsdaten...
+                </h3>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                  Dies dauert in der Regel nur 2-5 Sekunden. Die Seite wird automatisch aktualisiert.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
