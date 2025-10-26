@@ -1,0 +1,216 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import multer from "multer";
+import { storage } from "./storage";
+import { extractInvoiceData, validateGermanVatId } from "./gemini-vertex";
+import type { InsertInvoice } from "@shared/schema";
+import pdfParse from "pdf-parse";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Nur JPG, PNG und PDF Dateien sind erlaubt"));
+    }
+  },
+});
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Get all invoices
+  app.get("/api/invoices", async (req, res) => {
+    try {
+      const invoices = await storage.getAllInvoices();
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      res.status(500).send("Fehler beim Abrufen der Rechnungen");
+    }
+  });
+
+  // Get single invoice
+  app.get("/api/invoices/:id", async (req, res) => {
+    try {
+      const invoice = await storage.getInvoice(req.params.id);
+      if (!invoice) {
+        return res.status(404).send("Rechnung nicht gefunden");
+      }
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      res.status(500).send("Fehler beim Abrufen der Rechnung");
+    }
+  });
+
+  // Upload and process invoice
+  app.post("/api/invoices/upload", upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).send("Keine Datei hochgeladen");
+      }
+
+      const file = req.file;
+      const fileData = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+
+      // Create initial invoice record
+      const invoiceData: InsertInvoice = {
+        fileName: file.originalname,
+        fileType: file.mimetype,
+        fileData: fileData,
+        status: "processing",
+        invoiceNumber: null,
+        invoiceDate: null,
+        supplierName: null,
+        supplierAddress: null,
+        supplierVatId: null,
+        subtotal: null,
+        vatRate: null,
+        vatAmount: null,
+        totalAmount: null,
+        lineItems: null,
+        vatValidated: null,
+        errorMessage: null,
+      };
+
+      const invoice = await storage.createInvoice(invoiceData);
+
+      // Process extraction asynchronously
+      setImmediate(async () => {
+        try {
+          // Extract data using Vertex AI Gemini 2.5 Flash
+          const extractedData = await extractInvoiceData(fileData, file.mimetype);
+
+          // Validate German VAT ID if present
+          let vatValidated = null;
+          if (extractedData.supplierVatId) {
+            vatValidated = validateGermanVatId(extractedData.supplierVatId) ? "valid" : "invalid";
+          }
+
+          // Update invoice with extracted data
+          await storage.updateInvoice(invoice.id, {
+            status: "completed",
+            invoiceNumber: extractedData.invoiceNumber || null,
+            invoiceDate: extractedData.invoiceDate || null,
+            supplierName: extractedData.supplierName || null,
+            supplierAddress: extractedData.supplierAddress || null,
+            supplierVatId: extractedData.supplierVatId || null,
+            subtotal: extractedData.subtotal || null,
+            vatRate: extractedData.vatRate || null,
+            vatAmount: extractedData.vatAmount || null,
+            totalAmount: extractedData.totalAmount || null,
+            lineItems: extractedData.lineItems || null,
+            vatValidated: vatValidated,
+          });
+
+          console.log(`Invoice ${invoice.id} processed successfully`);
+        } catch (error) {
+          console.error(`Error processing invoice ${invoice.id}:`, error);
+          await storage.updateInvoice(invoice.id, {
+            status: "error",
+            errorMessage: error instanceof Error ? error.message : "Unbekannter Fehler bei der Verarbeitung",
+          });
+        }
+      });
+
+      // Return immediately with processing status
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error uploading invoice:", error);
+      res.status(500).send(error instanceof Error ? error.message : "Fehler beim Hochladen");
+    }
+  });
+
+  // Delete invoice
+  app.delete("/api/invoices/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteInvoice(req.params.id);
+      if (!deleted) {
+        return res.status(404).send("Rechnung nicht gefunden");
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      res.status(500).send("Fehler beim Löschen der Rechnung");
+    }
+  });
+
+  // Export invoices
+  app.get("/api/invoices/export", async (req, res) => {
+    try {
+      const format = req.query.format as string;
+      const invoices = await storage.getAllInvoices();
+
+      if (format === "csv") {
+        // Generate CSV
+        const headers = [
+          "Rechnungsnummer",
+          "Datum",
+          "Lieferant",
+          "USt-IdNr",
+          "Zwischensumme",
+          "MwSt-Satz",
+          "MwSt-Betrag",
+          "Gesamtsumme",
+          "Status",
+        ];
+
+        const rows = invoices.map((inv) => [
+          inv.invoiceNumber || "",
+          inv.invoiceDate || "",
+          inv.supplierName || "",
+          inv.supplierVatId || "",
+          inv.subtotal || "",
+          inv.vatRate || "",
+          inv.vatAmount || "",
+          inv.totalAmount || "",
+          inv.status,
+        ]);
+
+        const csv = [
+          headers.join(","),
+          ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+        ].join("\n");
+
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader("Content-Disposition", "attachment; filename=rechnungen-export.csv");
+        res.send(csv);
+      } else if (format === "json") {
+        // Generate JSON (exclude file data for smaller file size)
+        const exportData = invoices.map((inv) => ({
+          id: inv.id,
+          fileName: inv.fileName,
+          invoiceNumber: inv.invoiceNumber,
+          invoiceDate: inv.invoiceDate,
+          supplierName: inv.supplierName,
+          supplierAddress: inv.supplierAddress,
+          supplierVatId: inv.supplierVatId,
+          subtotal: inv.subtotal,
+          vatRate: inv.vatRate,
+          vatAmount: inv.vatAmount,
+          totalAmount: inv.totalAmount,
+          lineItems: inv.lineItems,
+          vatValidated: inv.vatValidated,
+          status: inv.status,
+          createdAt: inv.createdAt,
+        }));
+
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader("Content-Disposition", "attachment; filename=rechnungen-export.json");
+        res.json(exportData);
+      } else {
+        res.status(400).send("Ungültiges Format. Verwenden Sie 'csv' oder 'json'.");
+      }
+    } catch (error) {
+      console.error("Error exporting invoices:", error);
+      res.status(500).send("Fehler beim Exportieren der Rechnungen");
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}

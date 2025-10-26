@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice Data Extraction - Integration Example</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .demo-container {
+      background: white;
+      border-radius: 20px;
+      padding: 60px 40px;
+      max-width: 800px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: #1a202c;
+    }
+    
+    .subtitle {
+      font-size: 1.2rem;
+      color: #718096;
+      margin-bottom: 3rem;
+    }
+    
+    .benefits {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+      text-align: left;
+    }
+    
+    .benefit {
+      padding: 1.5rem;
+      background: #f7fafc;
+      border-radius: 12px;
+      transition: transform 0.2s;
+    }
+    
+    .benefit:hover {
+      transform: translateY(-5px);
+    }
+    
+    .benefit-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .benefit h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      color: #2d3748;
+    }
+    
+    .benefit p {
+      font-size: 0.9rem;
+      color: #718096;
+      line-height: 1.5;
+    }
+    
+    .cta-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 18px 48px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .cta-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+    }
+    
+    .cta-button:active {
+      transform: translateY(-1px);
+    }
+    
+    /* Modal Styles */
+    #invoice-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 10000;
+      backdrop-filter: blur(5px);
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    #invoice-modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #invoice-iframe-container {
+      position: relative;
+      width: 95%;
+      height: 95%;
+      max-width: 1600px;
+      max-height: 950px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      animation: slideUp 0.4s ease;
+    }
+    
+    @keyframes slideUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    #invoice-close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #ef4444;
+      color: white;
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 24px;
+      line-height: 1;
+      z-index: 10001;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+    
+    #invoice-close-btn:hover {
+      background: #dc2626;
+      transform: rotate(90deg);
+    }
+    
+    #invoice-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    
+    .loading-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    
+    .spinner {
+      border: 4px solid #f3f4f6;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #10b981;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+      display: none;
+      animation: slideInRight 0.3s ease;
+      z-index: 10002;
+    }
+    
+    @keyframes slideInRight {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    .notification.show {
+      display: block;
+    }
+    
+    @media (max-width: 768px) {
+      .demo-container {
+        padding: 40px 24px;
+      }
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .subtitle {
+        font-size: 1rem;
+      }
+      
+      .benefits {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      #invoice-iframe-container {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+      }
+      
+      .cta-button {
+        padding: 14px 32px;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Main Demo Container -->
+  <div class="demo-container">
+    <h1>🚀 Invoice Data Extraction</h1>
+    <p class="subtitle">Automatische Rechnungsverarbeitung mit KI</p>
+    
+    <div class="benefits">
+      <div class="benefit">
+        <div class="benefit-icon">⚡</div>
+        <h3>Zeit sparen</h3>
+        <p>Automatische Extraktion aller Rechnungsdaten in Sekunden</p>
+      </div>
+      
+      <div class="benefit">
+        <div class="benefit-icon">💰</div>
+        <h3>Kosten senken</h3>
+        <p>Reduzieren Sie manuelle Dateneingabe um bis zu 90%</p>
+      </div>
+      
+      <div class="benefit">
+        <div class="benefit-icon">✅</div>
+        <h3>Fehler vermeiden</h3>
+        <p>KI-gestützte Validierung und Plausibilitätschecks</p>
+      </div>
+    </div>
+    
+    <button class="cta-button" onclick="openInvoiceExtractor()">
+      <span>📄</span>
+      <span>Jetzt testen</span>
+      <span>→</span>
+    </button>
+  </div>
+
+  <!-- Invoice Extraction Modal -->
+  <div id="invoice-modal">
+    <div id="invoice-iframe-container">
+      <button id="invoice-close-btn" aria-label="Schließen" onclick="closeInvoiceExtractor()">&times;</button>
+      <div class="loading-indicator" id="loading-indicator">
+        <div class="spinner"></div>
+        <p>App wird geladen...</p>
+      </div>
+      <iframe 
+        id="invoice-iframe"
+        title="Rechnungsextraktion"
+        allow="camera; microphone; clipboard-write"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+      ></iframe>
+    </div>
+  </div>
+
+  <!-- Success Notification -->
+  <div id="notification" class="notification">
+    ✅ Rechnung erfolgreich verarbeitet!
+  </div>
+
+  <script>
+    // ========================================
+    // CONFIGURATION
+    // ========================================
+    
+    // ⚠️ WICHTIG: Ersetzen Sie diese URL mit Ihrer Replit-URL
+    const INVOICE_APP_URL = 'https://your-repl-name.repl.co'; 
+    
+    // Wenn Sie lokal testen:
+    // const INVOICE_APP_URL = 'http://localhost:5000';
+    
+    // ========================================
+    // MODAL FUNCTIONS
+    // ========================================
+    
+    function openInvoiceExtractor() {
+      const modal = document.getElementById('invoice-modal');
+      const iframe = document.getElementById('invoice-iframe');
+      const loading = document.getElementById('loading-indicator');
+      
+      // Show modal
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      
+      // Load iframe if not already loaded
+      if (!iframe.src) {
+        iframe.src = INVOICE_APP_URL + '/upload';
+        
+        // Hide loading indicator once iframe loads
+        iframe.onload = () => {
+          loading.style.display = 'none';
+        };
+      } else {
+        loading.style.display = 'none';
+      }
+      
+      // Track analytics (optional)
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'open_invoice_extractor', {
+          'event_category': 'engagement',
+          'event_label': 'Invoice Modal Opened'
+        });
+      }
+    }
+    
+    function closeInvoiceExtractor() {
+      const modal = document.getElementById('invoice-modal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+      
+      // Track analytics (optional)
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'close_invoice_extractor', {
+          'event_category': 'engagement',
+          'event_label': 'Invoice Modal Closed'
+        });
+      }
+    }
+    
+    // ========================================
+    // EVENT LISTENERS
+    // ========================================
+    
+    // Close on ESC key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeInvoiceExtractor();
+      }
+    });
+    
+    // Close on background click
+    document.getElementById('invoice-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'invoice-modal') {
+        closeInvoiceExtractor();
+      }
+    });
+    
+    // ========================================
+    // MESSAGE HANDLING (Communication with iframe)
+    // ========================================
+    
+    window.addEventListener('message', (event) => {
+      // Security check - only accept messages from our invoice app
+      if (event.origin !== INVOICE_APP_URL && 
+          event.origin !== 'http://localhost:5000' &&
+          event.origin !== 'http://127.0.0.1:5000') {
+        return;
+      }
+      
+      console.log('Message from invoice app:', event.data);
+      
+      // Handle different event types
+      if (event.data.type === 'invoice-uploaded') {
+        showNotification('📤 Rechnung wird verarbeitet...');
+      }
+      
+      if (event.data.type === 'invoice-processed') {
+        showNotification('✅ Rechnung erfolgreich verarbeitet!');
+        
+        // Optional: Track in analytics
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'invoice_processed', {
+            'event_category': 'conversion',
+            'invoice_id': event.data.invoice?.id,
+            'file_name': event.data.invoice?.fileName
+          });
+        }
+        
+        // Optional: Send to your backend
+        // sendInvoiceToBackend(event.data.invoice);
+      }
+      
+      if (event.data.type === 'invoice-error') {
+        showNotification('❌ Fehler: ' + event.data.error, 'error');
+      }
+      
+      if (event.data.type === 'close-requested') {
+        closeInvoiceExtractor();
+      }
+    });
+    
+    // ========================================
+    // NOTIFICATION FUNCTION
+    // ========================================
+    
+    function showNotification(message, type = 'success') {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.style.background = type === 'error' ? '#ef4444' : '#10b981';
+      notification.classList.add('show');
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 4000);
+    }
+    
+    // ========================================
+    // OPTIONAL: Send invoice data to your backend
+    // ========================================
+    
+    function sendInvoiceToBackend(invoice) {
+      fetch('/api/your-endpoint', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(invoice)
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Invoice saved to your backend:', data);
+      })
+      .catch(error => {
+        console.error('Error saving invoice:', error);
+      });
+    }
+    
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+    
+    // Preload iframe for faster opening (optional, uncomment if desired)
+    /*
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const iframe = document.getElementById('invoice-iframe');
+        iframe.src = INVOICE_APP_URL + '/upload';
+      }, 2000);
+    });
+    */
+    
+    console.log('✅ Invoice Extractor Integration loaded');
+    console.log('📍 App URL:', INVOICE_APP_URL);
+  </script>
+</body>
+</html>
+
