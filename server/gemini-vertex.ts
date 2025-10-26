@@ -130,7 +130,10 @@ Wichtige Hinweise:
 - Datum im Format DD.MM.YYYY
 - Falls ein Feld nicht gefunden wird, setze es auf null
 - Bei deutschen Rechnungen ist die MwSt. meist 19% oder 7%
-- Extrahiere alle Positionen aus der Rechnung für lineItems
+- Extrahiere ALLE Positionen aus der Rechnung für lineItems
+- WICHTIG: Bei mehrseitigen Dokumenten konzentriere dich auf die ERSTE SEITE mit der Hauptrechnung
+- Ignoriere Anhänge, Zahlungsbedingungen oder zusätzliche Seiten
+- Die relevanten Daten (Beträge, Positionen, Lieferant) stehen normalerweise auf Seite 1
 
 Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text.`;
 
