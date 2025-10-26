@@ -12,8 +12,18 @@ import type { Invoice } from "@shared/schema";
 
 export default function History() {
   const { toast } = useToast();
+  
+  // Check if there are any invoices being processed
+  const hasProcessingInvoices = (invoices: Invoice[]) => 
+    invoices.some(inv => inv.status === 'processing');
+  
   const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
     queryKey: ["/api/invoices"],
+    refetchInterval: (query) => {
+      const data = query.state.data as Invoice[] | undefined;
+      // Auto-refresh every 3 seconds if there are processing invoices
+      return data && hasProcessingInvoices(data) ? 3000 : false;
+    },
   });
 
   const deleteMutation = useMutation({
@@ -249,6 +259,17 @@ export default function History() {
                         </div>
                       )}
                     </div>
+
+                    {invoice.status === "processing" && (
+                      <div className="mb-4 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-yellow-600 dark:text-yellow-400" />
+                          <p className="text-sm text-yellow-800 dark:text-yellow-400">
+                            KI extrahiert Rechnungsdaten... Wird automatisch aktualisiert.
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {invoice.status === "error" && invoice.errorMessage && (
                       <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
