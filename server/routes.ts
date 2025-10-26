@@ -22,6 +22,78 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Export invoices - MUST be before /:id route!
+  app.get("/api/invoices/export", async (req, res) => {
+    try {
+      const format = req.query.format as string;
+      const invoices = await storage.getAllInvoices();
+
+      if (format === "csv") {
+        // Generate CSV
+        const headers = [
+          "Rechnungsnummer",
+          "Datum",
+          "Lieferant",
+          "USt-IdNr",
+          "Zwischensumme",
+          "MwSt-Satz",
+          "MwSt-Betrag",
+          "Gesamtsumme",
+          "Status",
+        ];
+
+        const rows = invoices.map((inv) => [
+          inv.invoiceNumber || "",
+          inv.invoiceDate || "",
+          inv.supplierName || "",
+          inv.supplierVatId || "",
+          inv.subtotal || "",
+          inv.vatRate || "",
+          inv.vatAmount || "",
+          inv.totalAmount || "",
+          inv.status,
+        ]);
+
+        const csv = [
+          headers.join(","),
+          ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+        ].join("\n");
+
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader("Content-Disposition", "attachment; filename=rechnungen-export.csv");
+        res.send(csv);
+      } else if (format === "json") {
+        // Generate JSON (exclude file data for smaller file size)
+        const exportData = invoices.map((inv) => ({
+          id: inv.id,
+          fileName: inv.fileName,
+          invoiceNumber: inv.invoiceNumber,
+          invoiceDate: inv.invoiceDate,
+          supplierName: inv.supplierName,
+          supplierAddress: inv.supplierAddress,
+          supplierVatId: inv.supplierVatId,
+          subtotal: inv.subtotal,
+          vatRate: inv.vatRate,
+          vatAmount: inv.vatAmount,
+          totalAmount: inv.totalAmount,
+          lineItems: inv.lineItems,
+          vatValidated: inv.vatValidated,
+          status: inv.status,
+          createdAt: inv.createdAt,
+        }));
+
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader("Content-Disposition", "attachment; filename=rechnungen-export.json");
+        res.json(exportData);
+      } else {
+        res.status(400).send("Ungültiges Format. Verwenden Sie 'csv' oder 'json'.");
+      }
+    } catch (error) {
+      console.error("Error exporting invoices:", error);
+      res.status(500).send("Fehler beim Exportieren der Rechnungen");
+    }
+  });
+  
   // Get all invoices
   app.get("/api/invoices", async (req, res) => {
     try {
@@ -136,78 +208,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting invoice:", error);
       res.status(500).send("Fehler beim Löschen der Rechnung");
-    }
-  });
-
-  // Export invoices
-  app.get("/api/invoices/export", async (req, res) => {
-    try {
-      const format = req.query.format as string;
-      const invoices = await storage.getAllInvoices();
-
-      if (format === "csv") {
-        // Generate CSV
-        const headers = [
-          "Rechnungsnummer",
-          "Datum",
-          "Lieferant",
-          "USt-IdNr",
-          "Zwischensumme",
-          "MwSt-Satz",
-          "MwSt-Betrag",
-          "Gesamtsumme",
-          "Status",
-        ];
-
-        const rows = invoices.map((inv) => [
-          inv.invoiceNumber || "",
-          inv.invoiceDate || "",
-          inv.supplierName || "",
-          inv.supplierVatId || "",
-          inv.subtotal || "",
-          inv.vatRate || "",
-          inv.vatAmount || "",
-          inv.totalAmount || "",
-          inv.status,
-        ]);
-
-        const csv = [
-          headers.join(","),
-          ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
-        ].join("\n");
-
-        res.setHeader("Content-Type", "text/csv");
-        res.setHeader("Content-Disposition", "attachment; filename=rechnungen-export.csv");
-        res.send(csv);
-      } else if (format === "json") {
-        // Generate JSON (exclude file data for smaller file size)
-        const exportData = invoices.map((inv) => ({
-          id: inv.id,
-          fileName: inv.fileName,
-          invoiceNumber: inv.invoiceNumber,
-          invoiceDate: inv.invoiceDate,
-          supplierName: inv.supplierName,
-          supplierAddress: inv.supplierAddress,
-          supplierVatId: inv.supplierVatId,
-          subtotal: inv.subtotal,
-          vatRate: inv.vatRate,
-          vatAmount: inv.vatAmount,
-          totalAmount: inv.totalAmount,
-          lineItems: inv.lineItems,
-          vatValidated: inv.vatValidated,
-          status: inv.status,
-          createdAt: inv.createdAt,
-        }));
-
-        res.setHeader("Content-Type", "application/json");
-        res.setHeader("Content-Disposition", "attachment; filename=rechnungen-export.json");
-        res.json(exportData);
-      } else {
-        res.status(400).send("Ungültiges Format. Verwenden Sie 'csv' oder 'json'.");
-      }
-    } catch (error) {
-      console.error("Error exporting invoices:", error);
-      res.status(500).send("Fehler beim Exportieren der Rechnungen");
     }
   });
 

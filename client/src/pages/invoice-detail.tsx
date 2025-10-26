@@ -136,7 +136,7 @@ export default function InvoiceDetail() {
                 <img
                   src={invoice.fileData}
                   alt={invoice.fileName}
-                  className="w-full h-auto rounded-lg border"
+                  className="w-full h-auto max-w-2xl mx-auto rounded-lg border"
                   data-testid="img-invoice-preview"
                 />
               ) : invoice.fileType === "application/pdf" ? (
