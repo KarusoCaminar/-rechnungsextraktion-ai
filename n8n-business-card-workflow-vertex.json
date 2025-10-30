@@ -177,46 +177,34 @@
     },
     {
       "parameters": {
-        "url": "https://us-central1-aiplatform.googleapis.com/v1/projects/DEIN-PROJECT-ID/locations/us-central1/publishers/google/models/gemini-1.5-pro:generateContent",
-        "method": "POST",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "googleApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
+        "promptType": "define",
+        "text": "={{ `Extrahiere alle Kontaktdaten aus dieser Visitenkarte und gib sie als strukturiertes JSON zurück.\\n\\nErforderliche Felder:\\n- name: Vollständiger Name\\n- company: Firma/Unternehmen\\n- email: E-Mail-Adresse\\n- phone: Haupttelefonnummer (Mobil bevorzugt)\\n- phone_office: Bürotelefonnummer (optional)\\n- address: Straße und Hausnummer\\n- city: Postleitzahl und Stadt\\n- website: Website-URL (optional)\\n- job_title: Berufsbezeichnung/Position (optional)\\n\\nGib NUR valides JSON zurück, kein zusätzlicher Text, kein Markdown-Formatting.\\n\\nBeispiel-Format:\\n{\\\"name\\\": \\\"Max Mustermann\\\", \\\"company\\\": \\\"Beispiel GmbH\\\", \\\"email\\\": \\\"max@beispiel.de\\\", \\\"phone\\\": \\\"+49 123 456789\\\", \\\"address\\\": \\\"Musterstraße 1\\\", \\\"city\\\": \\\"12345 Musterstadt\\\"}` }}",
+        "options": {
+          "systemMessage": "Du bist ein Experte für Visitenkarten-Extraktion. Extrahiere strukturierte Kontaktdaten aus Bildern und gib sie als valides JSON zurück."
+        },
+        "attachments": {
+          "attachments": [
             {
-              "name": "Content-Type",
-              "value": "application/json"
+              "name": "business-card",
+              "data": "={{ $json.imageBase64 }}",
+              "mimeType": "={{ $json.mimeType }}"
             }
           ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": []
-        },
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  \"contents\": [{\n    \"parts\": [\n      {\n        \"text\": \"Extrahiere alle Kontaktdaten aus dieser Visitenkarte und gib sie als strukturiertes JSON zurück. \\n\\nErforderliche Felder:\\n- name: Vollständiger Name\\n- company: Firma/Unternehmen\\n- email: E-Mail-Adresse\\n- phone: Haupttelefonnummer (Mobil bevorzugt)\\n- phone_office: Bürotelefonnummer (optional)\\n- address: Straße und Hausnummer\\n- city: Postleitzahl und Stadt\\n- website: Website-URL (optional)\\n- job_title: Berufsbezeichnung/Position (optional)\\n\\nGib NUR valides JSON zurück, kein zusätzlicher Text, kein Markdown-Formatting.\\n\\nBeispiel-Format:\\n{\\\"name\\\": \\\"Max Mustermann\\\", \\\"company\\\": \\\"Beispiel GmbH\\\", \\\"email\\\": \\\"max@beispiel.de\\\", \\\"phone\\\": \\\"+49 123 456789\\\", \\\"address\\\": \\\"Musterstraße 1\\\", \\\"city\\\": \\\"12345 Musterstadt\\\"}\"\n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": $json.mimeType,\n          \"data\": $json.imageBase64\n        }\n      }\n    ]\n  }],\n  \"generationConfig\": {\n    \"maxOutputTokens\": 2048,\n    \"temperature\": 0.3\n  }\n}) }}",
-        "options": {}
-      },
-      "id": "vertex-ai-http",
-      "name": "Vertex AI HTTP Request",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [1560, 300],
-      "notes": "Alternative: Direkter HTTP Request zu Vertex AI API. Nutze diese Version, wenn der Vertex AI Node nicht verfügbar ist.",
-      "credentials": {
-        "googleApi": {
-          "id": "YOUR_GOOGLE_API_CREDENTIALS_ID",
-          "name": "Google Cloud API"
         }
-      }
+      },
+      "id": "ai-agent-vertex",
+      "name": "AI Agent - Vertex AI",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [1560, 300],
+      "notes": "⚠️ WICHTIG: Konfiguriere unter 'Chat Model' → Google Vertex AI Gemini mit deinen Credentials!"
     },
     {
       "parameters": {
-        "jsCode": "// Parse Vertex AI Gemini Response\nconst response = $json;\nconst source = $('Setze Sample-Info').item.json.source || 'Upload';\nconst sample = $('Setze Sample-Info').item.json.sample || '';\n\n// Vertex AI Response Struktur:\n// {\n//   \"candidates\": [{\n//     \"content\": {\n//       \"parts\": [{\n//         \"text\": \"{\\\"name\\\": \\\"...\\\"}\"\n//       }]\n//     }\n//   }]\n// }\n\nlet extractedData = {};\n\ntry {\n  // Versuche JSON aus Response zu extrahieren\n  const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text || '';\n  \n  // Extrahiere JSON aus Text (falls zusätzlicher Text vorhanden)\n  const jsonMatch = text.match(/\\{[\\s\\S]*\\}/);\n  const jsonString = jsonMatch ? jsonMatch[0] : text;\n  \n  // Parse JSON\n  extractedData = JSON.parse(jsonString);\n} catch (error) {\n  // Fallback: Versuche direkt zu parsen\n  if (typeof response === 'object') {\n    extractedData = response;\n  } else {\n    console.error('Fehler beim Parsen der Vertex AI Response:', error);\n    extractedData = {};\n  }\n}\n\n// Füge Metadaten hinzu\nreturn [{\n  json: {\n    name: extractedData.name || '',\n    company: extractedData.company || '',\n    email: extractedData.email || '',\n    phone: extractedData.phone || extractedData.phone_mobile || '',\n    phone_office: extractedData.phone_office || extractedData.phone_büro || '',\n    address: extractedData.address || '',\n    city: extractedData.city || '',\n    website: extractedData.website || extractedData.www || '',\n    job_title: extractedData.job_title || extractedData.position || '',\n    source: source,\n    sample: sample,\n    timestamp: new Date().toISOString()\n  }\n}];"
+        "jsCode": "// Parse AI Agent Response (Vertex AI Gemini)\nconst response = $json;\nconst source = $('Setze Sample-Info').item.json.source || 'Upload';\nconst sample = $('Setze Sample-Info').item.json.sample || '';\n\n// AI Agent Response Struktur kann variieren:\n// Option 1: Direkt JSON Response\n// Option 2: Text mit JSON\n// Option 3: Strukturierte Response mit output/chatOutput\n\nlet extractedData = {};\nlet responseText = '';\n\ntry {\n  // Versuche verschiedene Response-Strukturen\n  if (response.output) {\n    responseText = response.output;\n  } else if (response.chatOutput) {\n    responseText = response.chatOutput;\n  } else if (response.text) {\n    responseText = response.text;\n  } else if (response.message) {\n    responseText = response.message;\n  } else if (response.candidates?.[0]?.content?.parts?.[0]?.text) {\n    // Vertex AI native Format\n    responseText = response.candidates[0].content.parts[0].text;\n  } else if (typeof response === 'string') {\n    responseText = response;\n  } else if (typeof response === 'object' && response.name) {\n    // Bereits strukturiertes JSON\n    extractedData = response;\n  }\n  \n  // Extrahiere JSON aus Text (falls zusätzlicher Text vorhanden)\n  if (responseText) {\n    const jsonMatch = responseText.match(/\\{[\\s\\S]*\\}/);\n    const jsonString = jsonMatch ? jsonMatch[0] : responseText;\n    extractedData = JSON.parse(jsonString);\n  }\n} catch (error) {\n  // Fallback: Versuche direkt zu parsen\n  if (typeof response === 'object' && !response.candidates) {\n    extractedData = response;\n  } else {\n    console.error('Fehler beim Parsen der AI Agent Response:', error);\n    console.error('Response:', JSON.stringify(response, null, 2));\n    extractedData = {};\n  }\n}\n\n// Füge Metadaten hinzu\nreturn [{\n  json: {\n    name: extractedData.name || '',\n    company: extractedData.company || '',\n    email: extractedData.email || '',\n    phone: extractedData.phone || extractedData.phone_mobile || '',\n    phone_office: extractedData.phone_office || extractedData.phone_büro || '',\n    address: extractedData.address || '',\n    city: extractedData.city || '',\n    website: extractedData.website || extractedData.www || '',\n    job_title: extractedData.job_title || extractedData.position || '',\n    source: source,\n    sample: sample,\n    timestamp: new Date().toISOString()\n  }\n}];"
       },
       "id": "parse-vertex-response",
-      "name": "Parse Vertex AI Response",
+      "name": "Parse AI Agent Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1780, 300],
@@ -342,14 +330,14 @@
       "main": [
         [
           {
-            "node": "Vertex AI HTTP Request",
+            "node": "AI Agent - Vertex AI",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Vertex AI HTTP Request": {
+    "AI Agent - Vertex AI": {
       "main": [
         [
           {
