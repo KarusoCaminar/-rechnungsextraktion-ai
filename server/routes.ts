@@ -24,6 +24,11 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Lightweight health check endpoint with no side effects
+  app.get("/healthz", (_req: any, res: any) => {
+    res.type("text/plain").send("OK");
+  });
+
   // Export invoices - MUST be before /:id route!
   app.get("/api/invoices/export", async (req, res) => {
     try {
