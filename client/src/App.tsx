@@ -39,8 +39,26 @@ export default function App() {
             <div className="flex flex-col flex-1 overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
               <header className="flex items-center gap-2 p-4 border-b border-border/50 bg-white/50 backdrop-blur-sm shadow-sm">
                 <SidebarTrigger data-testid="button-sidebar-toggle" />
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-primary/20 border border-primary/30"></div>
+                <div className="flex items-center gap-2 flex-1 justify-center">
+                  <img 
+                    src="/logo.png" 
+                    alt="Kortex Logo" 
+                    className="w-8 h-8 object-contain"
+                    onError={(e) => {
+                      // Fallback to icon if logo doesn't exist
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const fallback = target.parentElement?.querySelector('.logo-fallback');
+                      if (fallback) {
+                        (fallback as HTMLElement).style.display = 'flex';
+                      }
+                    }}
+                  />
+                  <div className="logo-fallback" style={{display: 'none', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '8px', background: 'hsl(var(--primary))'}}>
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                  </div>
                   <h2 className="text-sm font-semibold text-foreground">
                     Kortex System
                   </h2>
