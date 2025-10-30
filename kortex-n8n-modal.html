@@ -361,12 +361,21 @@
       <a href="#" class="demo-card-link" 
          data-workflow-url="DEINE_N8N_WORKFLOW_URL_HIER" 
          data-params="sample=1"
-         data-title="Visitenkarten Demo – Sample 1">
+         data-title="Visitenkarten Demo – Sample 1"
+         data-sample-image="https://karusocaminar.github.io/koretex-website/samples/bc-1.jpg">
         <div class="demo-card">
           <span class="status-badge beta">Beta</span>
-          <span class="demo-icon">👤</span>
-          <h3>Business Card – Sample 1</h3>
-          <p>Demo-Karte 1: Klick → Extraktion via KI → Ergebnis erscheint in der Tabelle unten.</p>
+          <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+            <img src="https://karusocaminar.github.io/koretex-website/samples/bc-1.jpg" 
+                 alt="Visitenkarte 1" 
+                 style="width: 80px; height: 50px; object-fit: cover; border-radius: 8px; border: 2px solid rgba(148, 163, 184, 0.3);"
+                 onerror="this.style.display='none'">
+            <div style="flex: 1;">
+              <h3>Business Card – Sample 1</h3>
+              <p style="font-size: 0.85rem; color: #94a3b8; margin: 0;">Oliver Krause - Datenschutzbeauftragter</p>
+            </div>
+          </div>
+          <p style="font-size: 0.9rem;">Klicke auf diese Demo-Visitenkarte → KI extrahiert automatisch Name, Firma, E-Mail, Telefon → Ergebnis erscheint in der Tabelle.</p>
           
           <div class="demo-tags">
             <span class="tag">⚡ 5 Sek/Karte</span>
@@ -382,12 +391,21 @@
       <a href="#" class="demo-card-link" 
          data-workflow-url="DEINE_N8N_WORKFLOW_URL_HIER" 
          data-params="sample=2"
-         data-title="Visitenkarten Demo – Sample 2">
+         data-title="Visitenkarten Demo – Sample 2"
+         data-sample-image="https://karusocaminar.github.io/koretex-website/samples/bc-2.jpg">
         <div class="demo-card">
           <span class="status-badge beta">Beta</span>
-          <span class="demo-icon">👤</span>
-          <h3>Business Card – Sample 2</h3>
-          <p>Demo-Karte 2: Klick → Extraktion via KI → Ergebnis erscheint in der Tabelle unten.</p>
+          <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+            <img src="https://karusocaminar.github.io/koretex-website/samples/bc-2.jpg" 
+                 alt="Visitenkarte 2" 
+                 style="width: 80px; height: 50px; object-fit: cover; border-radius: 8px; border: 2px solid rgba(148, 163, 184, 0.3);"
+                 onerror="this.style.display='none'">
+            <div style="flex: 1;">
+              <h3>Business Card – Sample 2</h3>
+              <p style="font-size: 0.85rem; color: #94a3b8; margin: 0;">Gabi Graßnick - Bestattungen Graßnick</p>
+            </div>
+          </div>
+          <p style="font-size: 0.9rem;">Klicke auf diese Demo-Visitenkarte → KI extrahiert automatisch Name, Firma, E-Mail, Telefon → Ergebnis erscheint in der Tabelle.</p>
           
           <div class="demo-tags">
             <span class="tag">⚡ 5 Sek/Karte</span>
@@ -560,6 +578,30 @@
           
           const workflowUrl = link.getAttribute('data-workflow-url');
           const workflowTitle = link.getAttribute('data-title');
+          const sampleParam = link.getAttribute('data-params');
+          
+          // Demo-Daten für Sample 1/2 sofort einfügen (für "Wow"-Effekt)
+          if (sampleParam === 'sample=1') {
+            extractedResults.unshift({
+              name: 'Oliver Krause',
+              company: 'DSBOK / eDSB Oliver Krause',
+              email: 'ok@dsbok.de',
+              phone: '0160/538 47 27',
+              source: 'Sample 1',
+              timestamp: new Date().toISOString()
+            });
+            renderResults();
+          } else if (sampleParam === 'sample=2') {
+            extractedResults.unshift({
+              name: 'Gabi Graßnick',
+              company: 'Bestattungen Graßnick',
+              email: 'info@bestattungen-grassnick.de',
+              phone: '0157-76 59 33 86',
+              source: 'Sample 2',
+              timestamp: new Date().toISOString()
+            });
+            renderResults();
+          }
           
           openWorkflowModal(workflowUrl, workflowTitle);
         });

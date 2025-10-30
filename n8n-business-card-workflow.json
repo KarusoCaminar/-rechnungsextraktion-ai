@@ -1,0 +1,300 @@
+{
+  "name": "Business Card Extraction Demo",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "business-card-extraction",
+        "options": {
+          "responseCode": 200,
+          "responseMode": "lastNode"
+        },
+        "binaryPropertyName": "file"
+      },
+      "id": "webhook-form",
+      "name": "Business Card Upload",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "business-card-extraction",
+      "continueOnFail": false,
+      "notes": "Form Trigger für Demo. Lädt Datei hoch oder nutzt sample=1/2 Parameter."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "string": [
+            {
+              "value1": "={{$json.query.sample}}",
+              "value2": "",
+              "operation": "notEmpty"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "check-sample",
+      "name": "Ist Sample?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "string": [
+            {
+              "value1": "={{$json.query.sample}}",
+              "value2": "1",
+              "operation": "equals"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "check-sample-1",
+      "name": "Sample 1?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "string": [
+            {
+              "value1": "={{$json.query.sample}}",
+              "value2": "2",
+              "operation": "equals"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "check-sample-2",
+      "name": "Sample 2?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 420]
+    },
+    {
+      "parameters": {
+        "url": "https://karusocaminar.github.io/koretex-website/samples/bc-1.jpg",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "load-sample-1",
+      "name": "Lade Sample 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 180],
+      "notes": "Lädt Demo-Visitenkarte 1 (Oliver Krause). Passe die URL an deine tatsächliche Datei an!"
+    },
+    {
+      "parameters": {
+        "url": "https://karusocaminar.github.io/koretex-website/samples/bc-2.jpg",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "load-sample-2",
+      "name": "Lade Sample 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 420],
+      "notes": "Lädt Demo-Visitenkarte 2 (Gabi Graßnick). Passe die URL an deine tatsächliche Datei an!"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Setze Sample-Nummer für nachfolgende Verarbeitung\nconst sample = $json.query?.sample || '';\nreturn [{\n  json: {\n    sample: sample,\n    source: sample ? `Sample ${sample}` : 'Upload'\n  },\n  binary: $binary\n}];"
+      },
+      "id": "set-sample-info",
+      "name": "Setze Sample-Info",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ⚠️ HIER MUSS DEINE KI-EXTRAKTION HIN!\n// \n// Ersetze diesen Node durch:\n// - Google Vision API Node\n// - OpenAI GPT-4 Vision Node\n// - Vertex AI Node\n// - oder deinen eigenen KI-Service\n//\n// Dieser Code ist ein PLACEHOLDER für die Demo:\n// Für Sample 1 und 2 gebe ich die bereits bekannten Daten zurück\n// Für Uploads würde hier deine echte KI-Extraktion laufen\n\nconst sample = $json.sample || '';\nconst binary = $binary;\n\n// PLACEHOLDER: Demo-Daten für Sample 1 (Oliver Krause)\nif (sample === '1') {\n  return [{\n    json: {\n      name: 'Oliver Krause',\n      company: 'DSBOK / eDSB Oliver Krause',\n      email: 'ok@dsbok.de',\n      phone: '0160/538 47 27',\n      phone_office: '06144/40 21 97',\n      address: 'Untergasse 2',\n      city: '65474 Bischofsheim',\n      website: 'www.dsbok.de',\n      job_title: 'Datenschutzbeauftragter (TÜV Pers Zert)',\n      source: 'Sample 1',\n      timestamp: new Date().toISOString()\n    },\n    binary: binary\n  }];\n}\n\n// PLACEHOLDER: Demo-Daten für Sample 2 (Gabi Graßnick)\nif (sample === '2') {\n  return [{\n    json: {\n      name: 'Gabi Graßnick',\n      company: 'Bestattungen Graßnick',\n      email: 'info@bestattungen-grassnick.de',\n      phone: '0157-76 59 33 86',\n      phone_office: '0341-22 32 32 98',\n      address: 'Buchfinkenweg 2-4',\n      city: '04159 Leipzig',\n      website: 'www.bestattungen-grassnick.de',\n      job_title: 'Inhaberin',\n      source: 'Sample 2',\n      timestamp: new Date().toISOString()\n    },\n    binary: binary\n  }];\n}\n\n// FÜR UPLOADS: Hier würde deine echte KI-Extraktion laufen\n// Beispiel-Struktur:\n// 1. Bild an Google Vision API senden (OCR)\n// 2. Extrahierten Text an GPT-4o senden mit Prompt:\n//    \"Extrahiere Name, Firma, E-Mail, Telefon aus dieser Visitenkarte: [TEXT]\"\n// 3. GPT-4o gibt strukturierte JSON zurück\n// 4. Hier zurückgeben\n\n// TEMPORARY: Für Uploads gebe ich leere Daten zurück (muss ersetzt werden)\nreturn [{\n  json: {\n    name: '',\n    company: '',\n    email: '',\n    phone: '',\n    phone_office: '',\n    address: '',\n    city: '',\n    website: '',\n    job_title: '',\n    source: 'Upload',\n    timestamp: new Date().toISOString(),\n    note: '⚠️ KI-Extraktion muss noch konfiguriert werden!'\n  },\n  binary: binary\n}];"
+      },
+      "id": "ki-extraction",
+      "name": "KI-Extraktion (PLACEHOLDER)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300],
+      "notes": "⚠️ WICHTIG: Ersetze diesen Node durch deine echte KI-Extraktion!"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatiere Daten für die Website\nconst data = $json;\nreturn [{\n  json: {\n    type: 'business-card-processed',\n    payload: {\n      name: data.name || '',\n      company: data.company || '',\n      email: data.email || '',\n      phone: data.phone || '',\n      phone_office: data.phone_office || '',\n      address: data.address || '',\n      city: data.city || '',\n      website: data.website || '',\n      job_title: data.job_title || '',\n      source: data.source || 'Upload',\n      timestamp: data.timestamp || new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "id": "format-response",
+      "name": "Formatiere für Website",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "respond-to-webhook",
+      "name": "Antwort an Website",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "notes": "Sendet Ergebnisse zurück an die Website. Die Website empfängt die Daten via postMessage."
+    }
+  ],
+  "connections": {
+    "Business Card Upload": {
+      "main": [
+        [
+          {
+            "node": "Ist Sample?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ist Sample?": {
+      "main": [
+        [
+          {
+            "node": "Setze Sample-Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sample 1?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample 1?": {
+      "main": [
+        [
+          {
+            "node": "Lade Sample 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sample 2?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample 2?": {
+      "main": [
+        [
+          {
+            "node": "Lade Sample 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lade Sample 1": {
+      "main": [
+        [
+          {
+            "node": "Setze Sample-Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lade Sample 2": {
+      "main": [
+        [
+          {
+            "node": "Setze Sample-Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Setze Sample-Info": {
+      "main": [
+        [
+          {
+            "node": "KI-Extraktion (PLACEHOLDER)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KI-Extraktion (PLACEHOLDER)": {
+      "main": [
+        [
+          {
+            "node": "Formatiere für Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatiere für Website": {
+      "main": [
+        [
+          {
+            "node": "Antwort an Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-27T12:00:00.000Z",
+  "versionId": "1"
+}
+
