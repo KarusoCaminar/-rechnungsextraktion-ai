@@ -15,14 +15,14 @@ import {
 
 const menuItems = [
   {
-    title: "Dashboard",
+    title: "Hochladen",
     url: "/",
-    icon: Home,
+    icon: Upload,
   },
   {
-    title: "Hochladen",
-    url: "/upload",
-    icon: Upload,
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: Home,
   },
   {
     title: "Historie",
@@ -43,9 +43,9 @@ export function AppSidebar() {
           </div>
           <div>
             <h1 className="text-lg font-semibold text-sidebar-foreground">
-              Rechnungs-Extraktor
+              Kortex System
             </h1>
-            <p className="text-xs text-muted-foreground">Gemini 2.5 Flash</p>
+            <p className="text-xs text-muted-foreground">Rechnungsextraktion</p>
           </div>
         </div>
       </SidebarHeader>

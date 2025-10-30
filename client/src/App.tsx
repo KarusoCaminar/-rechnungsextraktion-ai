@@ -14,7 +14,8 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={Upload} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/upload" component={Upload} />
       <Route path="/history" component={History} />
       <Route path="/invoice/:id" component={InvoiceDetail} />
@@ -39,7 +40,7 @@ export default function App() {
               <header className="flex items-center gap-2 p-4 border-b border-border bg-background">
                 <SidebarTrigger data-testid="button-sidebar-toggle" />
                 <h2 className="text-sm font-medium text-muted-foreground">
-                  Rechnungsextraktion
+                  Kortex System
                 </h2>
               </header>
               <main className="flex-1 overflow-y-auto bg-background">
