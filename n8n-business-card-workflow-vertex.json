@@ -1,0 +1,396 @@
+{
+  "name": "Business Card Extraction Demo - Vertex AI",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "business-card-extraction",
+        "options": {
+          "responseCode": 200,
+          "responseMode": "lastNode"
+        },
+        "binaryPropertyName": "file"
+      },
+      "id": "webhook-form",
+      "name": "Business Card Upload",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "business-card-extraction",
+      "continueOnFail": false,
+      "notes": "Form Trigger für Demo. Lädt Datei hoch oder nutzt sample=1/2 Parameter."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "string": [
+            {
+              "value1": "={{$json.query.sample}}",
+              "value2": "",
+              "operation": "notEmpty"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "check-sample",
+      "name": "Ist Sample?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "string": [
+            {
+              "value1": "={{$json.query.sample}}",
+              "value2": "1",
+              "operation": "equals"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "check-sample-1",
+      "name": "Sample 1?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "string": [
+            {
+              "value1": "={{$json.query.sample}}",
+              "value2": "2",
+              "operation": "equals"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "check-sample-2",
+      "name": "Sample 2?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 420]
+    },
+    {
+      "parameters": {
+        "url": "https://karusocaminar.github.io/koretex-website/samples/bc-1.jpg",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "load-sample-1",
+      "name": "Lade Sample 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 180],
+      "notes": "Lädt Demo-Visitenkarte 1 (Oliver Krause). Passe die URL an deine tatsächliche Datei an!"
+    },
+    {
+      "parameters": {
+        "url": "https://karusocaminar.github.io/koretex-website/samples/bc-2.jpg",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "load-sample-2",
+      "name": "Lade Sample 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 420],
+      "notes": "Lädt Demo-Visitenkarte 2 (Gabi Graßnick). Passe die URL an deine tatsächliche Datei an!"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Setze Sample-Nummer für nachfolgende Verarbeitung\nconst sample = $json.query?.sample || '';\nreturn [{\n  json: {\n    sample: sample,\n    source: sample ? `Sample ${sample}` : 'Upload'\n  },\n  binary: $binary\n}];"
+      },
+      "id": "set-sample-info",
+      "name": "Setze Sample-Info",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Konvertiere Binary zu Base64 für Vertex AI\nconst binary = $binary?.data;\nconst binaryData = binary?.data || binary;\n\nif (!binaryData) {\n  throw new Error('Kein Binary-Daten gefunden!');\n}\n\n// Base64 Encoding\nconst base64 = Buffer.from(binaryData).toString('base64');\nconst mimeType = binary?.mimeType || 'image/jpeg';\n\nreturn [{\n  json: {\n    sample: $json.sample || '',\n    source: $json.source || 'Upload',\n    imageBase64: base64,\n    mimeType: mimeType\n  }\n}];"
+      },
+      "id": "convert-to-base64",
+      "name": "Konvertiere zu Base64",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300],
+      "notes": "Konvertiert das Bild zu Base64 für Vertex AI Gemini API"
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "projectId": "={{ $env.GOOGLE_CLOUD_PROJECT_ID }}",
+        "location": "us-central1",
+        "model": "gemini-1.5-pro",
+        "operation": "generateContent",
+        "options": {
+          "maxOutputTokens": 2048,
+          "temperature": 0.3
+        },
+        "content": "={{ JSON.stringify([{\n  \"parts\": [\n    {\n      \"text\": \"Extrahiere alle Kontaktdaten aus dieser Visitenkarte und gib sie als strukturiertes JSON zurück. \\n\\nErforderliche Felder:\\n- name: Vollständiger Name\\n- company: Firma/Unternehmen\\n- email: E-Mail-Adresse\\n- phone: Haupttelefonnummer (Mobil bevorzugt)\\n- phone_office: Bürotelefonnummer (optional)\\n- address: Straße und Hausnummer\\n- city: Postleitzahl und Stadt\\n- website: Website-URL (optional)\\n- job_title: Berufsbezeichnung/Position (optional)\\n\\nGib NUR valides JSON zurück, kein zusätzlicher Text, kein Markdown-Formatting.\\n\\nBeispiel-Format:\\n{\\\"name\\\": \\\"Max Mustermann\\\", \\\"company\\\": \\\"Beispiel GmbH\\\", \\\"email\\\": \\\"max@beispiel.de\\\", \\\"phone\\\": \\\"+49 123 456789\\\", \\\"address\\\": \\\"Musterstraße 1\\\", \\\"city\\\": \\\"12345 Musterstadt\\\"}\"\n    },\n    {\n      \"inline_data\": {\n        \"mime_type\": $json.mimeType,\n        \"data\": $json.imageBase64\n      }\n    }\n  ]\n}]) }}"
+      },
+      "id": "vertex-ai-gemini",
+      "name": "Vertex AI Gemini",
+      "type": "@n8n/n8n-nodes-langchain.languageModel",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "notes": "⚠️ WICHTIG: Aktiviere Google API Credentials in n8n Settings!",
+      "credentials": {
+        "googleApi": {
+          "id": "YOUR_GOOGLE_API_CREDENTIALS_ID",
+          "name": "Google Cloud API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://us-central1-aiplatform.googleapis.com/v1/projects/DEIN-PROJECT-ID/locations/us-central1/publishers/google/models/gemini-1.5-pro:generateContent",
+        "method": "POST",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  \"contents\": [{\n    \"parts\": [\n      {\n        \"text\": \"Extrahiere alle Kontaktdaten aus dieser Visitenkarte und gib sie als strukturiertes JSON zurück. \\n\\nErforderliche Felder:\\n- name: Vollständiger Name\\n- company: Firma/Unternehmen\\n- email: E-Mail-Adresse\\n- phone: Haupttelefonnummer (Mobil bevorzugt)\\n- phone_office: Bürotelefonnummer (optional)\\n- address: Straße und Hausnummer\\n- city: Postleitzahl und Stadt\\n- website: Website-URL (optional)\\n- job_title: Berufsbezeichnung/Position (optional)\\n\\nGib NUR valides JSON zurück, kein zusätzlicher Text, kein Markdown-Formatting.\\n\\nBeispiel-Format:\\n{\\\"name\\\": \\\"Max Mustermann\\\", \\\"company\\\": \\\"Beispiel GmbH\\\", \\\"email\\\": \\\"max@beispiel.de\\\", \\\"phone\\\": \\\"+49 123 456789\\\", \\\"address\\\": \\\"Musterstraße 1\\\", \\\"city\\\": \\\"12345 Musterstadt\\\"}\"\n      },\n      {\n        \"inline_data\": {\n          \"mime_type\": $json.mimeType,\n          \"data\": $json.imageBase64\n        }\n      }\n    ]\n  }],\n  \"generationConfig\": {\n    \"maxOutputTokens\": 2048,\n    \"temperature\": 0.3\n  }\n}) }}",
+        "options": {}
+      },
+      "id": "vertex-ai-http",
+      "name": "Vertex AI HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 300],
+      "notes": "Alternative: Direkter HTTP Request zu Vertex AI API. Nutze diese Version, wenn der Vertex AI Node nicht verfügbar ist.",
+      "credentials": {
+        "googleApi": {
+          "id": "YOUR_GOOGLE_API_CREDENTIALS_ID",
+          "name": "Google Cloud API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Vertex AI Gemini Response\nconst response = $json;\nconst source = $('Setze Sample-Info').item.json.source || 'Upload';\nconst sample = $('Setze Sample-Info').item.json.sample || '';\n\n// Vertex AI Response Struktur:\n// {\n//   \"candidates\": [{\n//     \"content\": {\n//       \"parts\": [{\n//         \"text\": \"{\\\"name\\\": \\\"...\\\"}\"\n//       }]\n//     }\n//   }]\n// }\n\nlet extractedData = {};\n\ntry {\n  // Versuche JSON aus Response zu extrahieren\n  const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text || '';\n  \n  // Extrahiere JSON aus Text (falls zusätzlicher Text vorhanden)\n  const jsonMatch = text.match(/\\{[\\s\\S]*\\}/);\n  const jsonString = jsonMatch ? jsonMatch[0] : text;\n  \n  // Parse JSON\n  extractedData = JSON.parse(jsonString);\n} catch (error) {\n  // Fallback: Versuche direkt zu parsen\n  if (typeof response === 'object') {\n    extractedData = response;\n  } else {\n    console.error('Fehler beim Parsen der Vertex AI Response:', error);\n    extractedData = {};\n  }\n}\n\n// Füge Metadaten hinzu\nreturn [{\n  json: {\n    name: extractedData.name || '',\n    company: extractedData.company || '',\n    email: extractedData.email || '',\n    phone: extractedData.phone || extractedData.phone_mobile || '',\n    phone_office: extractedData.phone_office || extractedData.phone_büro || '',\n    address: extractedData.address || '',\n    city: extractedData.city || '',\n    website: extractedData.website || extractedData.www || '',\n    job_title: extractedData.job_title || extractedData.position || '',\n    source: source,\n    sample: sample,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "parse-vertex-response",
+      "name": "Parse Vertex AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 300],
+      "notes": "Parst die Vertex AI Gemini Response und extrahiert strukturierte Kontaktdaten"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatiere Daten für die Website\nconst data = $json;\nreturn [{\n  json: {\n    type: 'business-card-processed',\n    payload: {\n      name: data.name || '',\n      company: data.company || '',\n      email: data.email || '',\n      phone: data.phone || '',\n      phone_office: data.phone_office || '',\n      address: data.address || '',\n      city: data.city || '',\n      website: data.website || '',\n      job_title: data.job_title || '',\n      source: data.source || 'Upload',\n      sample: data.sample || '',\n      timestamp: data.timestamp || new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "id": "format-response",
+      "name": "Formatiere für Website",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "respond-to-webhook",
+      "name": "Antwort an Website",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2220, 300],
+      "notes": "Sendet Ergebnisse zurück an die Website. Die Website empfängt die Daten via postMessage."
+    }
+  ],
+  "connections": {
+    "Business Card Upload": {
+      "main": [
+        [
+          {
+            "node": "Ist Sample?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ist Sample?": {
+      "main": [
+        [
+          {
+            "node": "Setze Sample-Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sample 1?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample 1?": {
+      "main": [
+        [
+          {
+            "node": "Lade Sample 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sample 2?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample 2?": {
+      "main": [
+        [
+          {
+            "node": "Lade Sample 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lade Sample 1": {
+      "main": [
+        [
+          {
+            "node": "Setze Sample-Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lade Sample 2": {
+      "main": [
+        [
+          {
+            "node": "Setze Sample-Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Setze Sample-Info": {
+      "main": [
+        [
+          {
+            "node": "Konvertiere zu Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konvertiere zu Base64": {
+      "main": [
+        [
+          {
+            "node": "Vertex AI HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vertex AI HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Parse Vertex AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Vertex AI Response": {
+      "main": [
+        [
+          {
+            "node": "Formatiere für Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatiere für Website": {
+      "main": [
+        [
+          {
+            "node": "Antwort an Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-27T12:00:00.000Z",
+  "versionId": "1"
+}
+
