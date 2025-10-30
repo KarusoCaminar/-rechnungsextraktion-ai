@@ -176,12 +176,15 @@ export default function Upload() {
   };
 
   return (
-    <div className="p-6 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Rechnung hochladen
-        </h1>
-        <p className="text-muted-foreground mt-2">
+    <div className="p-6 space-y-8 relative">
+      <div className="relative z-10">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-1 h-10 bg-primary rounded-full"></div>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-[hsl(210_96%_40%)] bg-clip-text text-transparent">
+            Rechnung hochladen
+          </h1>
+        </div>
+        <p className="text-muted-foreground mt-2 ml-4">
           Laden Sie eine Rechnung hoch oder wählen Sie ein Beispiel
         </p>
       </div>
@@ -200,23 +203,27 @@ export default function Upload() {
                 <div
                   {...getRootProps()}
                   className={`
-                    border-2 border-dashed rounded-lg p-12 text-center cursor-pointer
-                    transition-all duration-200 hover-elevate
+                    border-2 border-dashed rounded-xl p-12 text-center cursor-pointer
+                    transition-all duration-300 hover-elevate
+                    bg-gradient-to-br from-primary/5 to-primary/10
+                    backdrop-blur-sm
                     ${
                       isDragActive
-                        ? "border-primary bg-primary/5"
-                        : "border-border"
+                        ? "border-primary bg-primary/15 shadow-lg scale-[1.02]"
+                        : "border-primary/40 hover:border-primary/60 hover:shadow-md"
                     }
                   `}
                   data-testid="dropzone-upload"
                 >
                   <input {...getInputProps()} />
-                  <UploadIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 border-2 border-primary/20">
+                    <UploadIcon className="h-8 w-8 text-primary" />
+                  </div>
                   {isDragActive ? (
-                    <p className="text-lg font-medium">Hier ablegen...</p>
+                    <p className="text-lg font-semibold text-primary">Hier ablegen...</p>
                   ) : (
                     <>
-                      <p className="text-lg font-medium mb-2">
+                      <p className="text-lg font-semibold mb-2 text-foreground">
                         Datei hierher ziehen
                       </p>
                       <p className="text-sm text-muted-foreground">

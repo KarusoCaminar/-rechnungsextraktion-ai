@@ -36,14 +36,17 @@ export default function App() {
         <SidebarProvider style={style as React.CSSProperties}>
           <div className="flex h-screen w-full">
             <AppSidebar />
-            <div className="flex flex-col flex-1 overflow-hidden">
-              <header className="flex items-center gap-2 p-4 border-b border-border bg-background">
+            <div className="flex flex-col flex-1 overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
+              <header className="flex items-center gap-2 p-4 border-b border-border/50 bg-white/50 backdrop-blur-sm shadow-sm">
                 <SidebarTrigger data-testid="button-sidebar-toggle" />
-                <h2 className="text-sm font-medium text-muted-foreground">
-                  Kortex System
-                </h2>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded bg-primary/20 border border-primary/30"></div>
+                  <h2 className="text-sm font-semibold text-foreground">
+                    Kortex System
+                  </h2>
+                </div>
               </header>
-              <main className="flex-1 overflow-y-auto bg-background">
+              <main className="flex-1 overflow-y-auto">
                 <Router />
               </main>
             </div>

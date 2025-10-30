@@ -14,25 +14,27 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 210 5% 98%;
+  --background: 210 8% 99%;
+  --background-gradient: linear-gradient(135deg, hsl(210 96% 98%) 0%, hsl(210 20% 100%) 100%);
 
   --foreground: 210 6% 12%;
 
   --border: 210 5% 88%;
 
-  --card: 210 5% 96%;
+  --card: 210 5% 98%;
 
   --card-foreground: 210 6% 12%;
 
   --card-border: 210 5% 92%;
 
-  --sidebar: 210 5% 94%;
+  --sidebar: 210 96% 32%;
+  --sidebar-gradient: linear-gradient(180deg, hsl(210 96% 32%) 0%, hsl(210 96% 28%) 100%);
 
-  --sidebar-foreground: 210 6% 12%;
+  --sidebar-foreground: 210 10% 98%;
 
-  --sidebar-border: 210 5% 90%;
+  --sidebar-border: 210 96% 35%;
 
-  --sidebar-primary: 210 96% 32%;
+  --sidebar-primary: 210 96% 38%;
 
   --sidebar-primary-foreground: 210 10% 98%;
 
@@ -133,24 +135,26 @@
   --elevate-2: rgba(255,255,255, .09);
 
   --background: 210 6% 8%;
+  --background-gradient: linear-gradient(135deg, hsl(210 96% 8%) 0%, hsl(210 20% 6%) 100%);
 
   --foreground: 210 5% 92%;
 
   --border: 210 6% 18%;
 
-  --card: 210 6% 10%;
+  --card: 210 6% 12%;
 
   --card-foreground: 210 5% 92%;
 
-  --card-border: 210 6% 14%;
+  --card-border: 210 6% 16%;
 
-  --sidebar: 210 6% 12%;
+  --sidebar: 210 96% 32%;
+  --sidebar-gradient: linear-gradient(180deg, hsl(210 96% 32%) 0%, hsl(210 96% 28%) 100%);
 
-  --sidebar-foreground: 210 5% 92%;
+  --sidebar-foreground: 210 10% 98%;
 
-  --sidebar-border: 210 6% 16%;
+  --sidebar-border: 210 96% 35%;
 
-  --sidebar-primary: 210 96% 32%;
+  --sidebar-primary: 210 96% 38%;
 
   --sidebar-primary-foreground: 210 10% 98%;
 
@@ -238,7 +242,11 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background: hsl(var(--background));
+    background-image: var(--background-gradient);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
 }
 
