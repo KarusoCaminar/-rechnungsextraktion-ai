@@ -357,15 +357,16 @@
     <!-- Demo Cards Grid -->
     <div class="demo-grid">
       
-      <!-- Card 1: Business Card Extraction (n8n) -->
+      <!-- Card 1: Business Card Extraction (n8n) – Sample 1 -->
       <a href="#" class="demo-card-link" 
          data-workflow-url="DEINE_N8N_WORKFLOW_URL_HIER" 
-         data-title="Kortex Visitenkarten Demo">
+         data-params="sample=1"
+         data-title="Visitenkarten Demo – Sample 1">
         <div class="demo-card">
           <span class="status-badge beta">Beta</span>
           <span class="demo-icon">👤</span>
-          <h3>Business Card Extraction</h3>
-          <p>Automatische Erfassung von Kontaktdaten aus Visitenkarten mit KI. Schnell, präzise und direkt in Ihr CRM.</p>
+          <h3>Business Card – Sample 1</h3>
+          <p>Demo-Karte 1: Klick → Extraktion via KI → Ergebnis erscheint in der Tabelle unten.</p>
           
           <div class="demo-tags">
             <span class="tag">⚡ 5 Sek/Karte</span>
@@ -377,26 +378,77 @@
         </div>
       </a>
       
-      <!-- Card 2: Invoice Data Extraction (Replit) -->
+      <!-- Card 2: Business Card Extraction (n8n) – Sample 2 -->
       <a href="#" class="demo-card-link" 
-         data-workflow-url="https://koretex-invoice-db.onrender.com/upload" 
-         data-title="Rechnungsdaten-Extraktion">
+         data-workflow-url="DEINE_N8N_WORKFLOW_URL_HIER" 
+         data-params="sample=2"
+         data-title="Visitenkarten Demo – Sample 2">
         <div class="demo-card">
-          <span class="status-badge live">Live</span>
-          <span class="demo-icon">📄</span>
-          <h3>Invoice Data Extraction</h3>
-          <p>KI-gestützte Rechnungsverarbeitung. Automatische Extraktion aller relevanten Daten in Sekunden.</p>
+          <span class="status-badge beta">Beta</span>
+          <span class="demo-icon">👤</span>
+          <h3>Business Card – Sample 2</h3>
+          <p>Demo-Karte 2: Klick → Extraktion via KI → Ergebnis erscheint in der Tabelle unten.</p>
           
           <div class="demo-tags">
-            <span class="tag">⚡ 10 Sek/Rechnung</span>
-            <span class="tag success">✅ 98% Genauigkeit</span>
-            <span class="tag">🎯 Production-Ready</span>
+            <span class="tag">⚡ 5 Sek/Karte</span>
+            <span class="tag success">✅ 95% Genauigkeit</span>
+            <span class="tag">🔗 n8n-Powered</span>
           </div>
           
           <span class="arrow-icon">→</span>
         </div>
       </a>
       
+      <!-- Card 3: Eigene Visitenkarte hochladen (n8n Form) -->
+      <a href="#" class="demo-card-link" 
+         data-workflow-url="DEINE_N8N_WORKFLOW_URL_HIER" 
+         data-title="Eigene Visitenkarte hochladen">
+        <div class="demo-card">
+          <span class="status-badge live">Live</span>
+          <span class="demo-icon">🪪</span>
+          <h3>Eigene Visitenkarte hochladen</h3>
+          <p>Öffnet das n8n-Formular. Datei wählen → KI extrahiert → Ergebnis erscheint in der Tabelle unten.</p>
+          
+          <div class="demo-tags">
+            <span class="tag">🔒 DSGVO</span>
+            <span class="tag success">📥 Upload</span>
+            <span class="tag">🧠 KI</span>
+          </div>
+          
+          <span class="arrow-icon">→</span>
+        </div>
+      </a>
+      
+    </div>
+
+    <!-- Results Section -->
+    <div style="margin-top: 3rem; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(148, 163, 184, 0.2);">
+        <div style="font-weight: 600;">Extrahierte Kontaktdaten</div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="btn-download-csv" style="background:#1e40af;color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;">CSV herunterladen</button>
+          <button id="btn-download-json" style="background:#0f766e;color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;">JSON herunterladen</button>
+        </div>
+      </div>
+      <div style="overflow-x: auto;">
+        <table id="results-table" style="width:100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: rgba(148, 163, 184, 0.15); text-align: left;">
+              <th style="padding: 12px 16px; border-bottom: 1px solid rgba(148,163,184,0.2);">Name</th>
+              <th style="padding: 12px 16px; border-bottom: 1px solid rgba(148,163,184,0.2);">Firma</th>
+              <th style="padding: 12px 16px; border-bottom: 1px solid rgba(148,163,184,0.2);">E-Mail</th>
+              <th style="padding: 12px 16px; border-bottom: 1px solid rgba(148,163,184,0.2);">Telefon</th>
+              <th style="padding: 12px 16px; border-bottom: 1px solid rgba(148,163,184,0.2);">Quelle</th>
+              <th style="padding: 12px 16px; border-bottom: 1px solid rgba(148,163,184,0.2);">Zeit</th>
+            </tr>
+          </thead>
+          <tbody id="results-tbody">
+            <tr>
+              <td colspan="6" style="padding:16px; color:#94a3b8;">Noch keine Ergebnisse. Starte eine Demo oben.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -437,9 +489,15 @@
       // WICHTIG: URL-Parameter hinzufügen für Workflow-Visualisierung
       // modal=true: Zeigt das Formular im Modal-Modus
       // visualize=true: Zeigt den laufenden Workflow an (Execution Data)
-      const finalUrl = workflowUrl.includes('?') 
+      // Zusätzliche optionale Query-Parameter aus data-params (z.B. sample=1)
+      const activeLink = document.querySelector(`.demo-card-link[data-title="${workflowTitle}"]`);
+      const extraParams = activeLink?.getAttribute('data-params') || '';
+      const withViz = workflowUrl.includes('?') 
         ? `${workflowUrl}&modal=true&visualize=true`
         : `${workflowUrl}?modal=true&visualize=true`;
+      const finalUrl = extraParams
+        ? (withViz.includes('?') ? `${withViz}&${extraParams}` : `${withViz}?${extraParams}`)
+        : withViz;
       
       // Show modal
       modal.classList.add('active');
@@ -526,12 +584,76 @@
       
       console.log('✅ Kortex n8n Modal Integration geladen');
       console.log('📊 Gefundene Demo-Cards:', links.length);
+
+      // Download Buttons
+      document.getElementById('btn-download-csv')?.addEventListener('click', downloadCSV);
+      document.getElementById('btn-download-json')?.addEventListener('click', downloadJSON);
     });
     
     // ========================================
     // COMMUNICATION WITH IFRAME (optional)
     // ========================================
     
+    // Ergebnisse lokal halten
+    const extractedResults = [];
+
+    function renderResults() {
+      const tbody = document.getElementById('results-tbody');
+      if (!tbody) return;
+      if (extractedResults.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding:16px; color:#94a3b8;">Noch keine Ergebnisse. Starte eine Demo oben.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = extractedResults.map(r => `
+        <tr>
+          <td style="padding:12px 16px; border-top: 1px solid rgba(148,163,184,0.15);">${escapeHtml(r.name || '')}</td>
+          <td style="padding:12px 16px; border-top: 1px solid rgba(148,163,184,0.15);">${escapeHtml(r.company || '')}</td>
+          <td style="padding:12px 16px; border-top: 1px solid rgba(148,163,184,0.15);">${escapeHtml(r.email || '')}</td>
+          <td style="padding:12px 16px; border-top: 1px solid rgba(148,163,184,0.15);">${escapeHtml(r.phone || '')}</td>
+          <td style="padding:12px 16px; border-top: 1px solid rgba(148,163,184,0.15);">${escapeHtml(r.source || '')}</td>
+          <td style="padding:12px 16px; border-top: 1px solid rgba(148,163,184,0.15);">${new Date(r.timestamp).toLocaleString()}</td>
+        </tr>
+      `).join('');
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"]+/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    function downloadCSV() {
+      if (extractedResults.length === 0) return;
+      const headers = ['name','company','email','phone','source','timestamp'];
+      const csv = [headers.join(',')].concat(
+        extractedResults.map(r => headers.map(h => {
+          const val = r[h] != null ? String(r[h]) : '';
+          // Quote and escape
+          return '"' + val.replace(/"/g, '""') + '"';
+        }).join(','))
+      ).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'business-cards.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadJSON() {
+      if (extractedResults.length === 0) return;
+      const blob = new Blob([JSON.stringify(extractedResults, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'business-cards.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     window.addEventListener('message', (event) => {
       // Security check - adjust origins as needed
       const allowedOrigins = [
@@ -549,6 +671,19 @@
       console.log('📩 Message from workflow:', event.data);
       
       // Handle different event types
+      if (event.data?.type === 'business-card-processed') {
+        const p = event.data.payload || {};
+        extractedResults.unshift({
+          name: p.name || '',
+          company: p.company || '',
+          email: p.email || '',
+          phone: p.phone || '',
+          source: p.source || (p.sample ? `Sample ${p.sample}` : 'Upload'),
+          timestamp: p.timestamp || Date.now()
+        });
+        renderResults();
+      }
+
       if (event.data.type === 'workflow-complete') {
         console.log('✅ Workflow abgeschlossen');
         // Optional: Auto-close modal after completion
