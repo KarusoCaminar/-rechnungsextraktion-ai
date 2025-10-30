@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kortex KI-Workflows - Modal Version</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0a1628 0%, #09182F 100%);
+      min-height: 100vh;
+      color: white;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 20px;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+    
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      font-size: 1.3rem;
+      color: #94a3b8;
+      margin-bottom: 1rem;
+    }
+    
+    /* Demo Cards Grid */
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    
+    .demo-card-link {
+      text-decoration: none;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+    
+    .demo-card-link:hover {
+      transform: translateY(-8px);
+    }
+    
+    .demo-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 16px;
+      padding: 2.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .demo-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .demo-card:hover::before {
+      opacity: 1;
+    }
+    
+    .demo-card:hover {
+      border-color: rgba(96, 165, 250, 0.5);
+      box-shadow: 0 20px 60px rgba(59, 130, 246, 0.3);
+    }
+    
+    .demo-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      display: block;
+    }
+    
+    .demo-card h3 {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      color: white;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .demo-card p {
+      font-size: 1rem;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      position: relative;
+      z-index: 1;
+      flex-grow: 1;
+    }
+    
+    .demo-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .tag {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    
+    .tag.success {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+    
+    .arrow-icon {
+      position: absolute;
+      bottom: 2rem;
+      right: 2rem;
+      font-size: 2rem;
+      font-weight: bold;
+      color: #60a5fa;
+      transition: transform 0.3s ease;
+    }
+    
+    .demo-card:hover .arrow-icon {
+      transform: translateX(8px);
+    }
+    
+    /* Status Badge */
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    
+    .status-badge.live {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+    
+    .status-badge.beta {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+    }
+    
+    /* Alert Box */
+    .alert-box {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 3rem;
+      color: #93c5fd;
+    }
+    
+    .alert-box strong {
+      color: #60a5fa;
+    }
+    
+    /* ===== MODAL STYLES ===== */
+    #workflow-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 10000;
+      backdrop-filter: blur(8px);
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    #workflow-modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #workflow-iframe-container {
+      position: relative;
+      width: 95%;
+      height: 95%;
+      max-width: 1600px;
+      max-height: 950px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      animation: slideUp 0.4s ease;
+    }
+    
+    @keyframes slideUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    #workflow-close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #ef4444;
+      color: white;
+      border: none;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 28px;
+      line-height: 1;
+      z-index: 10001;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #workflow-close-btn:hover {
+      background: #dc2626;
+      transform: rotate(90deg) scale(1.1);
+    }
+    
+    #workflow-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 16px;
+    }
+    
+    .loading-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 10000;
+    }
+    
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top: 4px solid #60a5fa;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      color: #60a5fa;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .subtitle {
+        font-size: 1rem;
+      }
+      
+      .demo-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      
+      .demo-card {
+        padding: 2rem;
+      }
+      
+      #workflow-iframe-container {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+      }
+      
+      #workflow-close-btn {
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🚀 Kortex KI-Workflows</h1>
+      <p class="subtitle">Intelligente Automatisierung für Ihr Business</p>
+    </header>
+
+    <div class="alert-box">
+      <strong>ℹ️ Setup:</strong> Füge deine n8n-Workflow-URL ein (Zeile 361) und aktiviere in n8n: 
+      <strong>"Continue Workflow after Webhook Response"</strong> für Workflow-Visualisierung.
+      Die URL wird automatisch mit <code>?modal=true&visualize=true</code> erweitert.
+    </div>
+
+    <!-- Demo Cards Grid -->
+    <div class="demo-grid">
+      
+      <!-- Card 1: Business Card Extraction (n8n) -->
+      <a href="#" class="demo-card-link" 
+         data-workflow-url="DEINE_N8N_WORKFLOW_URL_HIER" 
+         data-title="Kortex Visitenkarten Demo">
+        <div class="demo-card">
+          <span class="status-badge beta">Beta</span>
+          <span class="demo-icon">👤</span>
+          <h3>Business Card Extraction</h3>
+          <p>Automatische Erfassung von Kontaktdaten aus Visitenkarten mit KI. Schnell, präzise und direkt in Ihr CRM.</p>
+          
+          <div class="demo-tags">
+            <span class="tag">⚡ 5 Sek/Karte</span>
+            <span class="tag success">✅ 95% Genauigkeit</span>
+            <span class="tag">🔗 n8n-Powered</span>
+          </div>
+          
+          <span class="arrow-icon">→</span>
+        </div>
+      </a>
+      
+      <!-- Card 2: Invoice Data Extraction (Replit) -->
+      <a href="#" class="demo-card-link" 
+         data-workflow-url="https://koretex-invoice-db.onrender.com/upload" 
+         data-title="Rechnungsdaten-Extraktion">
+        <div class="demo-card">
+          <span class="status-badge live">Live</span>
+          <span class="demo-icon">📄</span>
+          <h3>Invoice Data Extraction</h3>
+          <p>KI-gestützte Rechnungsverarbeitung. Automatische Extraktion aller relevanten Daten in Sekunden.</p>
+          
+          <div class="demo-tags">
+            <span class="tag">⚡ 10 Sek/Rechnung</span>
+            <span class="tag success">✅ 98% Genauigkeit</span>
+            <span class="tag">🎯 Production-Ready</span>
+          </div>
+          
+          <span class="arrow-icon">→</span>
+        </div>
+      </a>
+      
+    </div>
+  </div>
+
+  <!-- Workflow Modal -->
+  <div id="workflow-modal">
+    <div id="workflow-iframe-container">
+      <button id="workflow-close-btn" aria-label="Schließen">&times;</button>
+      <div class="loading-indicator" id="loading-indicator">
+        <div class="spinner"></div>
+        <p class="loading-text">Workflow wird geladen...</p>
+      </div>
+      <iframe 
+        id="workflow-iframe"
+        title="Workflow"
+        allow="camera; microphone; clipboard-write"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+      ></iframe>
+    </div>
+  </div>
+
+  <!-- JavaScript for Modal Handling -->
+  <script>
+    // ========================================
+    // MODAL FUNCTIONS
+    // ========================================
+    
+    function openWorkflowModal(workflowUrl, workflowTitle) {
+      const modal = document.getElementById('workflow-modal');
+      const iframe = document.getElementById('workflow-iframe');
+      const loading = document.getElementById('loading-indicator');
+      
+      // Validierung
+      if (!workflowUrl || workflowUrl.includes('DEINE_N8N')) {
+        alert('⚠️ Workflow-URL ist noch nicht konfiguriert!\n\nBitte füge den Link deines n8n-Formulars im HTML-Code ein.\n\nSuche nach: data-workflow-url="DEINE_N8N_..."');
+        return;
+      }
+      
+      // WICHTIG: URL-Parameter hinzufügen für Workflow-Visualisierung
+      // modal=true: Zeigt das Formular im Modal-Modus
+      // visualize=true: Zeigt den laufenden Workflow an (Execution Data)
+      const finalUrl = workflowUrl.includes('?') 
+        ? `${workflowUrl}&modal=true&visualize=true`
+        : `${workflowUrl}?modal=true&visualize=true`;
+      
+      // Show modal
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      
+      // Reset loading indicator
+      loading.style.display = 'block';
+      
+      // Load iframe with visualization parameters
+      iframe.src = finalUrl;
+      
+      // Hide loading indicator once iframe loads
+      iframe.onload = () => {
+        loading.style.display = 'none';
+      };
+      
+      // Analytics (optional)
+      console.log('🚀 Workflow geöffnet:', workflowTitle);
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'workflow_opened', {
+          'event_category': 'engagement',
+          'event_label': workflowTitle,
+          'workflow_url': workflowUrl
+        });
+      }
+    }
+    
+    function closeWorkflowModal() {
+      const modal = document.getElementById('workflow-modal');
+      const iframe = document.getElementById('workflow-iframe');
+      
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+      
+      // Optional: Clear iframe after closing (saves memory)
+      // Uncomment if you want to reload workflow each time
+      // setTimeout(() => {
+      //   iframe.src = '';
+      // }, 300);
+      
+      // Analytics (optional)
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'workflow_closed', {
+          'event_category': 'engagement'
+        });
+      }
+    }
+    
+    // ========================================
+    // EVENT LISTENERS
+    // ========================================
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      // Click handlers for demo cards
+      const links = document.querySelectorAll('.demo-card-link');
+      
+      links.forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          
+          const workflowUrl = link.getAttribute('data-workflow-url');
+          const workflowTitle = link.getAttribute('data-title');
+          
+          openWorkflowModal(workflowUrl, workflowTitle);
+        });
+      });
+      
+      // Close button
+      document.getElementById('workflow-close-btn').addEventListener('click', closeWorkflowModal);
+      
+      // Close on ESC key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeWorkflowModal();
+        }
+      });
+      
+      // Close on background click
+      document.getElementById('workflow-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'workflow-modal') {
+          closeWorkflowModal();
+        }
+      });
+      
+      console.log('✅ Kortex n8n Modal Integration geladen');
+      console.log('📊 Gefundene Demo-Cards:', links.length);
+    });
+    
+    // ========================================
+    // COMMUNICATION WITH IFRAME (optional)
+    // ========================================
+    
+    window.addEventListener('message', (event) => {
+      // Security check - adjust origins as needed
+      const allowedOrigins = [
+        'https://koretex-invoice-db.onrender.com',
+        'https://n8n.kortex.de',
+        'http://localhost:5000'
+      ];
+      
+      // Check if message is from an allowed origin
+      const isAllowed = allowedOrigins.some(origin => event.origin.includes(origin));
+      if (!isAllowed) {
+        return;
+      }
+      
+      console.log('📩 Message from workflow:', event.data);
+      
+      // Handle different event types
+      if (event.data.type === 'workflow-complete') {
+        console.log('✅ Workflow abgeschlossen');
+        // Optional: Auto-close modal after completion
+        // setTimeout(() => closeWorkflowModal(), 2000);
+      }
+      
+      if (event.data.type === 'close-requested') {
+        closeWorkflowModal();
+      }
+    });
+  </script>
+</body>
+</html>
+
