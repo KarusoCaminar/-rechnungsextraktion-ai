@@ -271,16 +271,75 @@ Example of correct output format:
           console.log("Using regex extraction method");
         }
       }
+      
+      // Method 3: If response appears truncated, try to fix incomplete JSON
+      if (!extractedJson && jsonText.includes('{') && !jsonText.includes('}')) {
+        console.warn("Response appears to be truncated (has { but no })");
+        // Try to find the last complete property before truncation
+        const lastCompleteProp = jsonText.match(/.*"([^"]+)":\s*"([^"]*)"(?:\s*,)?\s*$/);
+        if (lastCompleteProp) {
+          // Try to close the JSON structure
+          const incompleteJson = jsonText.substring(jsonText.indexOf('{'));
+          // Count open brackets and braces
+          const openBraces = (incompleteJson.match(/\{/g) || []).length;
+          const closeBraces = (incompleteJson.match(/\}/g) || []).length;
+          const openBrackets = (incompleteJson.match(/\[/g) || []).length;
+          const closeBrackets = (incompleteJson.match(/\]/g) || []).length;
+          
+          let fixedJson = incompleteJson;
+          // Close incomplete strings
+          if (!fixedJson.trim().endsWith('"') && fixedJson.includes('"') && 
+              (fixedJson.match(/"/g) || []).length % 2 !== 0) {
+            // Find the last unclosed string and close it
+            const lastQuoteIndex = fixedJson.lastIndexOf('"');
+            if (lastQuoteIndex !== -1 && lastQuoteIndex < fixedJson.length - 1) {
+              // Check if we're in a string context
+              const afterQuote = fixedJson.substring(lastQuoteIndex + 1);
+              if (!afterQuote.trim().startsWith(':') && !afterQuote.trim().startsWith(',')) {
+                fixedJson = fixedJson + '"';
+              }
+            }
+          }
+          
+          // Close arrays
+          for (let i = 0; i < openBrackets - closeBrackets; i++) {
+            fixedJson = fixedJson.trim() + '\n]';
+          }
+          
+          // Close objects
+          for (let i = 0; i < openBraces - closeBraces; i++) {
+            fixedJson = fixedJson.trim() + '\n}';
+          }
+          
+          extractedJson = fixedJson;
+          console.log("Attempted to fix truncated JSON response");
+        }
+      }
     }
     
     if (!extractedJson) {
       console.error("Could not extract JSON from response");
-      console.error("Response text:", textResponse);
+      console.error("Response text:", textResponse.substring(0, 500)); // Log first 500 chars
       throw new Error("KI-Antwort enthält kein gültiges JSON. Bitte versuchen Sie es erneut.");
     }
     
     // Clean extracted JSON
     extractedJson = extractedJson.trim();
+    
+    // Helper function to fix incomplete JSON strings
+    function fixIncompleteJson(json: string): string {
+      // Fix incomplete strings at the end
+      // Look for patterns like: "description (without closing quote)
+      const incompleteStringPattern = /:\s*"([^"]*)$/m;
+      const match = json.match(incompleteStringPattern);
+      
+      if (match && !match[0].endsWith('"')) {
+        // Close the incomplete string
+        json = json.replace(incompleteStringPattern, ': "$1"');
+      }
+      
+      return json;
+    }
     
     // Try to parse the JSON
     try {
@@ -290,22 +349,66 @@ Example of correct output format:
       // If parsing fails, try to fix common issues
       console.warn("Initial JSON parse failed, attempting to fix common issues...");
       
-      // Try to fix unescaped quotes in strings (basic attempt)
       let fixedJson = extractedJson;
       
-      // Try parsing again after potential fixes
+      // Fix 1: Fix incomplete strings
+      fixedJson = fixIncompleteJson(fixedJson);
+      
+      // Fix 2: Remove trailing commas
+      fixedJson = fixedJson.replace(/,(\s*[}\]])/g, '$1');
+      
+      // Fix 3: Try to close unclosed strings in properties
+      fixedJson = fixedJson.replace(/:\s*"([^"]*)$/gm, (match, content) => {
+        if (!match.endsWith('"')) {
+          return `: "${content}"`;
+        }
+        return match;
+      });
+      
+      // Try parsing again after fixes
       try {
-        // Remove trailing commas before closing braces/brackets
-        fixedJson = fixedJson.replace(/,(\s*[}\]])/g, '$1');
         const extractedData = JSON.parse(fixedJson) as ExtractedInvoiceData;
-        console.log("Successfully parsed after fixing trailing commas");
+        console.log("Successfully parsed after fixing common issues");
         return extractedData;
       } catch (secondParseError) {
-        console.error("JSON parsing failed after fixes:", secondParseError);
-        console.error("Original response text:", textResponse);
-        console.error("Cleaned JSON text:", extractedJson);
-        console.error("Fixed JSON text:", fixedJson);
-        throw new Error("Konnte extrahierte Daten nicht als JSON parsen. Die KI-Antwort war möglicherweise fehlerhaft formatiert.");
+        // Last attempt: Try to extract partial data from what we have
+        console.warn("JSON parsing failed after fixes, attempting partial extraction...");
+        try {
+          // Try to parse with a fallback: close all open structures
+          let recoveryJson = fixedJson;
+          
+          // Count and close all open structures
+          const openBracesCount = (recoveryJson.match(/\{/g) || []).length;
+          const closeBracesCount = (recoveryJson.match(/\}/g) || []).length;
+          const openBracketsCount = (recoveryJson.match(/\[/g) || []).length;
+          const closeBracketsCount = (recoveryJson.match(/\]/g) || []).length;
+          
+          // Close incomplete strings
+          const quoteCount = (recoveryJson.match(/"/g) || []).length;
+          if (quoteCount % 2 !== 0) {
+            recoveryJson = recoveryJson.trim() + '"';
+          }
+          
+          // Close arrays
+          for (let i = 0; i < openBracketsCount - closeBracketsCount; i++) {
+            recoveryJson = recoveryJson.trim() + ']';
+          }
+          
+          // Close objects
+          for (let i = 0; i < openBracesCount - closeBracesCount; i++) {
+            recoveryJson = recoveryJson.trim() + '}';
+          }
+          
+          const extractedData = JSON.parse(recoveryJson) as ExtractedInvoiceData;
+          console.log("Successfully parsed after recovery attempt");
+          return extractedData;
+        } catch (recoveryError) {
+          console.error("All JSON parsing attempts failed");
+          console.error("Original response text (first 1000 chars):", textResponse.substring(0, 1000));
+          console.error("Cleaned JSON text:", extractedJson.substring(0, 500));
+          console.error("Fixed JSON text:", fixedJson.substring(0, 500));
+          throw new Error("Konnte extrahierte Daten nicht als JSON parsen. Die KI-Antwort war möglicherweise abgeschnitten oder fehlerhaft formatiert.");
+        }
       }
     }
   } catch (error) {
