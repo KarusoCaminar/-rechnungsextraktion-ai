@@ -251,7 +251,63 @@ Example of correct output format:
     // Try to extract JSON using balanced brace matching
     let extractedJson = extractJSON(jsonText);
     
-    // If extraction failed, try alternative methods
+    // Check for truncated response - handles cases where JSON is cut off mid-string
+    // Example: ends with "description (without closing quote)
+    const quoteCount = (jsonText.match(/"/g) || []).length;
+    const hasIncompleteString = quoteCount % 2 !== 0;
+    const lastLine = jsonText.trim().split('\n').pop() || '';
+    const endsWithIncompleteProperty = /:\s*"[^"]*$/.test(lastLine);
+    
+    if (hasIncompleteString || endsWithIncompleteProperty) {
+      console.warn("Detected truncated response (incomplete string at end)");
+      const firstBrace = jsonText.indexOf('{');
+      if (firstBrace !== -1) {
+        let incompleteJson = jsonText.substring(firstBrace);
+        
+        // Close the incomplete string property
+        // Pattern: "description": "text (without closing quote)
+        if (endsWithIncompleteProperty || incompleteJson.match(/:\s*"[^"]*$/)) {
+          // Close the incomplete string - find last :" and add closing quote
+          incompleteJson = incompleteJson.replace(/:\s*"([^"]*)$/, ': "$1"');
+        } else if (hasIncompleteString) {
+          // Just add closing quote if quote count is odd
+          incompleteJson = incompleteJson.trim() + '"';
+        }
+        
+        // Check if we're inside lineItems array
+        const isInLineItems = incompleteJson.includes('"lineItems"') && 
+                             incompleteJson.lastIndexOf('"lineItems"') > incompleteJson.lastIndexOf(']');
+        
+        // Count open structures
+        const openBraces = (incompleteJson.match(/\{/g) || []).length;
+        const closeBraces = (incompleteJson.match(/\}/g) || []).length;
+        const openBrackets = (incompleteJson.match(/\[/g) || []).length;
+        const closeBrackets = (incompleteJson.match(/\]/g) || []).length;
+        
+        // If inside lineItems and array is not closed, close it
+        if (isInLineItems && openBrackets > closeBrackets) {
+          // Make sure property ends properly before closing array
+          if (!incompleteJson.trim().endsWith(',') && !incompleteJson.trim().endsWith(']')) {
+            incompleteJson = incompleteJson.trim() + '\n]';
+          }
+        }
+        
+        // Close remaining arrays
+        for (let i = 0; i < openBrackets - closeBrackets; i++) {
+          incompleteJson = incompleteJson.trim() + '\n]';
+        }
+        
+        // Close objects
+        for (let i = 0; i < openBraces - closeBraces; i++) {
+          incompleteJson = incompleteJson.trim() + '\n}';
+        }
+        
+        extractedJson = incompleteJson;
+        console.log("Fixed truncated JSON with incomplete string");
+      }
+    }
+    
+    // If extraction still failed, try alternative methods
     if (!extractedJson) {
       console.warn("Balanced brace extraction failed, trying alternative methods...");
       
@@ -269,50 +325,6 @@ Example of correct output format:
         if (jsonMatch && jsonMatch[0]) {
           extractedJson = jsonMatch[0];
           console.log("Using regex extraction method");
-        }
-      }
-      
-      // Method 3: If response appears truncated, try to fix incomplete JSON
-      if (!extractedJson && jsonText.includes('{') && !jsonText.includes('}')) {
-        console.warn("Response appears to be truncated (has { but no })");
-        // Try to find the last complete property before truncation
-        const lastCompleteProp = jsonText.match(/.*"([^"]+)":\s*"([^"]*)"(?:\s*,)?\s*$/);
-        if (lastCompleteProp) {
-          // Try to close the JSON structure
-          const incompleteJson = jsonText.substring(jsonText.indexOf('{'));
-          // Count open brackets and braces
-          const openBraces = (incompleteJson.match(/\{/g) || []).length;
-          const closeBraces = (incompleteJson.match(/\}/g) || []).length;
-          const openBrackets = (incompleteJson.match(/\[/g) || []).length;
-          const closeBrackets = (incompleteJson.match(/\]/g) || []).length;
-          
-          let fixedJson = incompleteJson;
-          // Close incomplete strings
-          if (!fixedJson.trim().endsWith('"') && fixedJson.includes('"') && 
-              (fixedJson.match(/"/g) || []).length % 2 !== 0) {
-            // Find the last unclosed string and close it
-            const lastQuoteIndex = fixedJson.lastIndexOf('"');
-            if (lastQuoteIndex !== -1 && lastQuoteIndex < fixedJson.length - 1) {
-              // Check if we're in a string context
-              const afterQuote = fixedJson.substring(lastQuoteIndex + 1);
-              if (!afterQuote.trim().startsWith(':') && !afterQuote.trim().startsWith(',')) {
-                fixedJson = fixedJson + '"';
-              }
-            }
-          }
-          
-          // Close arrays
-          for (let i = 0; i < openBrackets - closeBrackets; i++) {
-            fixedJson = fixedJson.trim() + '\n]';
-          }
-          
-          // Close objects
-          for (let i = 0; i < openBraces - closeBraces; i++) {
-            fixedJson = fixedJson.trim() + '\n}';
-          }
-          
-          extractedJson = fixedJson;
-          console.log("Attempted to fix truncated JSON response");
         }
       }
     }
