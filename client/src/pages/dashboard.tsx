@@ -25,26 +25,6 @@ export default function Dashboard() {
     queryKey: ["/api/invoices"],
   });
 
-  const deleteAllMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("DELETE", "/api/invoices");
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
-      toast({
-        title: "Alle Rechnungen gelöscht",
-        description: `${data.deletedCount || invoices.length} Rechnung(en) wurden erfolgreich gelöscht.`,
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Fehler",
-        description: "Rechnungen konnten nicht gelöscht werden.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const stats = {
     total: invoices.length,
     completed: invoices.filter((inv) => inv.status === "completed").length,
@@ -86,6 +66,26 @@ export default function Dashboard() {
       bgColor: "bg-destructive/10",
     },
   ];
+
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", "/api/invoices");
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      toast({
+        title: "Alle Rechnungen gelöscht",
+        description: `${data.deletedCount || stats.total} Rechnung(en) wurden erfolgreich gelöscht.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Fehler",
+        description: "Rechnungen konnten nicht gelöscht werden.",
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <div className="p-6 space-y-8">
