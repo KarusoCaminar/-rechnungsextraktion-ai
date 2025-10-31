@@ -75,6 +75,11 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result.length > 0;
   }
+
+  async deleteAllInvoices(): Promise<number> {
+    const result = await db.delete(invoices).returning();
+    return result.length;
+  }
 }
 
 export const storage = new DatabaseStorage();

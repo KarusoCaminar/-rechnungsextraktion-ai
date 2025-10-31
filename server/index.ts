@@ -42,6 +42,29 @@ async function cleanupOldInvoices() {
   }
 }
 
+// Auto-delete all invoices every hour (for privacy)
+async function setupAutoDeleteJob() {
+  const { storage } = await import("./storage");
+  
+  // Run immediately on startup
+  try {
+    const deletedCount = await storage.deleteAllInvoices();
+    log(`🗑️ Auto-delete: Deleted all invoices on startup (${deletedCount} invoices removed)`);
+  } catch (error) {
+    log(`⚠️ Auto-delete error on startup: ${error}`);
+  }
+
+  // Then run every hour (3600000 ms)
+  setInterval(async () => {
+    try {
+      const deletedCount = await storage.deleteAllInvoices();
+      log(`🗑️ Auto-delete: Deleted all invoices (${deletedCount} invoices removed)`);
+    } catch (error) {
+      log(`⚠️ Auto-delete error: ${error}`);
+    }
+  }, 60 * 60 * 1000); // 1 hour = 3600000 ms
+}
+
 // CORS Configuration for iframe embedding
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
@@ -111,6 +134,9 @@ app.use((req, res, next) => {
 (async () => {
   // Initialize database first
   await initializeDatabase();
+  
+  // Setup auto-delete job (every hour)
+  await setupAutoDeleteJob();
   
   const server = await registerRoutes(app);
 

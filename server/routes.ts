@@ -239,6 +239,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete all invoices
+  app.delete("/api/invoices", async (req, res) => {
+    try {
+      const deletedCount = await storage.deleteAllInvoices();
+      console.log(`🗑️ Deleted all invoices (${deletedCount} invoices removed)`);
+      res.json({ success: true, deletedCount });
+    } catch (error) {
+      console.error("Error deleting all invoices:", error);
+      res.status(500).send("Fehler beim Löschen aller Rechnungen");
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

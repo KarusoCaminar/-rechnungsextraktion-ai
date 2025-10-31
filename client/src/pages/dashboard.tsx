@@ -1,11 +1,48 @@
-import { useQuery } from "@tanstack/react-query";
-import { FileText, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { FileText, CheckCircle, Clock, AlertCircle, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import type { Invoice } from "@shared/schema";
 
 export default function Dashboard() {
+  const { toast } = useToast();
+  
   const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
     queryKey: ["/api/invoices"],
+  });
+
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", "/api/invoices");
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
+      toast({
+        title: "Alle Rechnungen gelöscht",
+        description: `${data.deletedCount || invoices.length} Rechnung(en) wurden erfolgreich gelöscht.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Fehler",
+        description: "Rechnungen konnten nicht gelöscht werden.",
+        variant: "destructive",
+      });
+    },
   });
 
   const stats = {
@@ -52,13 +89,45 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Dashboard
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Übersicht Ihrer Rechnungsverarbeitung
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Übersicht Ihrer Rechnungsverarbeitung
+          </p>
+        </div>
+        {stats.total > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Alle löschen
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Alle Rechnungen löschen?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Möchten Sie wirklich alle {stats.total} Rechnung(en) löschen? 
+                  Diese Aktion kann nicht rückgängig gemacht werden. Die Rechnungen werden 
+                  automatisch nach 1 Stunde gelöscht, um Ihre Privatsphäre zu schützen.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => deleteAllMutation.mutate()}
+                  disabled={deleteAllMutation.isPending}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleteAllMutation.isPending ? "Lösche..." : "Alle löschen"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {isLoading ? (
