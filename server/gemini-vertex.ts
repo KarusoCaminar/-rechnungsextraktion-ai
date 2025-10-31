@@ -167,8 +167,10 @@ Example of correct output format:
       generationConfig: {
         temperature: 0.1,
         maxOutputTokens: 4096,
+        // responseMimeType is optional - helps ensure JSON output
+        // If unsupported by the model version, the prompt will ensure JSON output
         responseMimeType: "application/json",
-      },
+      } as any, // Type assertion for compatibility with different Vertex AI SDK versions
     };
 
     const response = await generativeModel.generateContent(request);
