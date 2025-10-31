@@ -259,7 +259,7 @@ Example of correct output format:
     const endsWithIncompleteProperty = /:\s*"[^"]*$/.test(lastLine);
     
     if (hasIncompleteString || endsWithIncompleteProperty) {
-      console.warn("Detected truncated response (incomplete string at end)");
+      console.warn(`⚠️ Detected truncated response (incomplete string at end). Quote count: ${quoteCount}, Last line: ${lastLine.substring(0, 50)}...`);
       const firstBrace = jsonText.indexOf('{');
       if (firstBrace !== -1) {
         let incompleteJson = jsonText.substring(firstBrace);
@@ -303,7 +303,7 @@ Example of correct output format:
         }
         
         extractedJson = incompleteJson;
-        console.log("Fixed truncated JSON with incomplete string");
+        console.log(`🔧 Fixed truncated JSON: closed ${openBraces - closeBraces} objects, ${openBrackets - closeBrackets} arrays`);
       }
     }
     
@@ -356,6 +356,7 @@ Example of correct output format:
     // Try to parse the JSON
     try {
       const extractedData = JSON.parse(extractedJson) as ExtractedInvoiceData;
+      console.log(`✅ Successfully extracted invoice data: ${extractedData.invoiceNumber || 'N/A'}, ${extractedData.lineItems?.length || 0} line items`);
       return extractedData;
     } catch (parseError) {
       // If parsing fails, try to fix common issues
@@ -384,7 +385,7 @@ Example of correct output format:
         return extractedData;
       } catch (secondParseError) {
         // Last attempt: Try to extract partial data from what we have
-        console.warn("JSON parsing failed after fixes, attempting partial extraction...");
+        console.warn(`⚠️ JSON parsing failed after fixes (${secondParseError instanceof Error ? secondParseError.message : 'unknown error'}), attempting partial extraction...`);
         try {
           // Try to parse with a fallback: close all open structures
           let recoveryJson = fixedJson;
