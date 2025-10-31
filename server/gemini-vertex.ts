@@ -135,7 +135,17 @@ Important instructions:
 - Relevant data (amounts, line items, supplier) is usually on page 1
 - Works for invoices in ANY language (German, English, French, etc.)
 
-Respond ONLY with the JSON object, no additional text.`;
+CRITICAL OUTPUT REQUIREMENTS:
+- Respond ONLY with valid JSON object
+- Do NOT include any markdown code blocks (no ```json or ```)
+- Do NOT include any explanatory text before or after the JSON
+- Do NOT include any comments or notes
+- Start your response with { and end with }
+- Ensure all JSON brackets and braces are properly balanced
+- Ensure all strings are properly escaped and quoted
+
+Example of correct output format:
+{"invoiceNumber":"RE-2024-001","invoiceDate":"01.01.2024",...}`;
 
     const request = {
       contents: [
@@ -156,7 +166,8 @@ Respond ONLY with the JSON object, no additional text.`;
       ],
       generationConfig: {
         temperature: 0.1,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 4096,
+        responseMimeType: "application/json",
       },
     };
 
@@ -184,17 +195,18 @@ Respond ONLY with the JSON object, no additional text.`;
     // Remove markdown code blocks (both ```json and ```)
     jsonText = jsonText.replace(/^```(?:json)?\s*/gm, "").replace(/```\s*$/gm, "");
     
-    // Try to find JSON object if there's extra text using balanced brace matching
-    // This accounts for braces inside string literals
-    const firstBrace = jsonText.indexOf('{');
-    if (firstBrace !== -1) {
+    // Helper function to extract JSON using balanced brace matching
+    function extractJSON(text: string): string | null {
+      const firstBrace = text.indexOf('{');
+      if (firstBrace === -1) return null;
+      
       let depth = 0;
       let lastBrace = -1;
       let inString = false;
       let escapeNext = false;
       
-      for (let i = firstBrace; i < jsonText.length; i++) {
-        const char = jsonText[i];
+      for (let i = firstBrace; i < text.length; i++) {
+        const char = text[i];
         
         // Handle escape sequences
         if (escapeNext) {
@@ -227,27 +239,72 @@ Respond ONLY with the JSON object, no additional text.`;
         }
       }
       
-      // Verify we found balanced braces
-      if (lastBrace === -1 || depth !== 0) {
-        console.error("Unbalanced braces in AI response");
-        console.error("Response text:", textResponse);
-        throw new Error("KI-Antwort enthält unausgewogene geschweifte Klammern. Bitte versuchen Sie es erneut.");
+      if (lastBrace !== -1 && depth === 0) {
+        return text.substring(firstBrace, lastBrace + 1);
       }
       
-      jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+      return null;
     }
     
-    // Remove any leading/trailing whitespace and newlines
-    jsonText = jsonText.trim();
+    // Try to extract JSON using balanced brace matching
+    let extractedJson = extractJSON(jsonText);
     
+    // If extraction failed, try alternative methods
+    if (!extractedJson) {
+      console.warn("Balanced brace extraction failed, trying alternative methods...");
+      
+      // Method 1: Try to find JSON between first { and last }
+      const firstBraceAlt = jsonText.indexOf('{');
+      const lastBraceAlt = jsonText.lastIndexOf('}');
+      if (firstBraceAlt !== -1 && lastBraceAlt !== -1 && lastBraceAlt > firstBraceAlt) {
+        extractedJson = jsonText.substring(firstBraceAlt, lastBraceAlt + 1);
+        console.log("Using alternative extraction method (first { to last })");
+      }
+      
+      // Method 2: Try regex to find JSON object
+      if (!extractedJson) {
+        const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+        if (jsonMatch && jsonMatch[0]) {
+          extractedJson = jsonMatch[0];
+          console.log("Using regex extraction method");
+        }
+      }
+    }
+    
+    if (!extractedJson) {
+      console.error("Could not extract JSON from response");
+      console.error("Response text:", textResponse);
+      throw new Error("KI-Antwort enthält kein gültiges JSON. Bitte versuchen Sie es erneut.");
+    }
+    
+    // Clean extracted JSON
+    extractedJson = extractedJson.trim();
+    
+    // Try to parse the JSON
     try {
-      const extractedData = JSON.parse(jsonText) as ExtractedInvoiceData;
+      const extractedData = JSON.parse(extractedJson) as ExtractedInvoiceData;
       return extractedData;
     } catch (parseError) {
-      console.error("JSON parsing failed:", parseError);
-      console.error("Response text:", textResponse);
-      console.error("Cleaned JSON text:", jsonText);
-      throw new Error("Konnte extrahierte Daten nicht als JSON parsen");
+      // If parsing fails, try to fix common issues
+      console.warn("Initial JSON parse failed, attempting to fix common issues...");
+      
+      // Try to fix unescaped quotes in strings (basic attempt)
+      let fixedJson = extractedJson;
+      
+      // Try parsing again after potential fixes
+      try {
+        // Remove trailing commas before closing braces/brackets
+        fixedJson = fixedJson.replace(/,(\s*[}\]])/g, '$1');
+        const extractedData = JSON.parse(fixedJson) as ExtractedInvoiceData;
+        console.log("Successfully parsed after fixing trailing commas");
+        return extractedData;
+      } catch (secondParseError) {
+        console.error("JSON parsing failed after fixes:", secondParseError);
+        console.error("Original response text:", textResponse);
+        console.error("Cleaned JSON text:", extractedJson);
+        console.error("Fixed JSON text:", fixedJson);
+        throw new Error("Konnte extrahierte Daten nicht als JSON parsen. Die KI-Antwort war möglicherweise fehlerhaft formatiert.");
+      }
     }
   } catch (error) {
     console.error("Error extracting invoice data:", error);
