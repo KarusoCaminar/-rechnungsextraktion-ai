@@ -137,7 +137,7 @@ Important instructions:
 
 CRITICAL OUTPUT REQUIREMENTS:
 - Respond ONLY with valid JSON object
-- Do NOT include any markdown code blocks (no ```json or ```)
+- Do NOT include any markdown code blocks (no code fences)
 - Do NOT include any explanatory text before or after the JSON
 - Do NOT include any comments or notes
 - Start your response with { and end with }
