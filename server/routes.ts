@@ -36,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const invoices = await storage.getAllInvoices();
 
       if (format === "csv") {
-        // Generate CSV
+        // Generate CSV with UTF-8 BOM for Excel compatibility
         const headers = [
           "Rechnungsnummer",
           "Datum",
@@ -49,22 +49,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "Status",
         ];
 
-        const rows = invoices.map((inv) => [
-          inv.invoiceNumber || "",
-          inv.invoiceDate || "",
-          inv.supplierName || "",
-          inv.supplierVatId || "",
-          inv.subtotal || "",
-          inv.vatRate || "",
-          inv.vatAmount || "",
-          inv.totalAmount || "",
-          inv.status,
-        ]);
+        const csvRows = [
+          // Header row with proper escaping
+          headers.map((h) => `"${h.replace(/"/g, '""')}"`).join(","),
+          // Data rows with proper escaping
+          ...invoices.map((inv) => {
+            const row = [
+              inv.invoiceNumber || "",
+              inv.invoiceDate || "",
+              inv.supplierName || "",
+              inv.supplierVatId || "",
+              inv.subtotal || "",
+              inv.vatRate || "",
+              inv.vatAmount || "",
+              inv.totalAmount || "",
+              inv.status || "",
+            ];
+            return row.map((cell) => {
+              const val = String(cell || "").replace(/"/g, '""');
+              return `"${val}"`;
+            }).join(",");
+          }),
+        ];
 
-        const csv = [
-          headers.join(","),
-          ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
-        ].join("\n");
+        // UTF-8 BOM for Excel compatibility (korrekte Darstellung von Umlauten)
+        const BOM = "\uFEFF";
+        const csv = BOM + csvRows.join("\n");
 
         res.setHeader("Content-Type", "text/csv; charset=utf-8");
         res.setHeader("Content-Disposition", "attachment; filename=rechnungen-export.csv");
