@@ -69,7 +69,8 @@ export default function Dashboard() {
 
   const deleteAllMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("DELETE", "/api/invoices");
+      const res = await apiRequest("DELETE", "/api/invoices");
+      return res.json();
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
