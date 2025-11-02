@@ -13,9 +13,13 @@ export const invoices = pgTable("invoices", {
   // Extracted invoice data
   invoiceNumber: text("invoice_number"),
   invoiceDate: text("invoice_date"), // German format: DD.MM.YYYY
+  dueDate: text("due_date"), // Payment due date: DD.MM.YYYY
   supplierName: text("supplier_name"),
   supplierAddress: text("supplier_address"),
   supplierVatId: text("supplier_vat_id"),
+  customerName: text("customer_name"), // Customer/bill-to name
+  customerAddress: text("customer_address"), // Customer/bill-to address
+  paymentTerms: text("payment_terms"), // e.g., "Net 30", "Due on receipt"
   
   // Financial data
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }),

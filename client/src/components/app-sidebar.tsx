@@ -1,5 +1,6 @@
 import { Home, Upload, History, FileText } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useTranslation } from "@/hooks/use-translation";
 
 import {
   Sidebar,
@@ -13,26 +14,27 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 
-const menuItems = [
-  {
-    title: "Hochladen",
-    url: "/",
-    icon: Upload,
-  },
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: Home,
-  },
-  {
-    title: "Historie",
-    url: "/history",
-    icon: History,
-  },
-];
-
 export function AppSidebar() {
   const [location] = useLocation();
+  const { t } = useTranslation();
+
+  const menuItems = [
+    {
+      title: t("nav.upload"),
+      url: "/",
+      icon: Upload,
+    },
+    {
+      title: t("nav.dashboard"),
+      url: "/dashboard",
+      icon: Home,
+    },
+    {
+      title: t("nav.history"),
+      url: "/history",
+      icon: History,
+    },
+  ];
 
   return (
     <Sidebar className="bg-gradient-to-b from-[hsl(var(--sidebar))] to-[hsl(210_96%_28%)] border-r border-sidebar-border">
@@ -55,16 +57,16 @@ export function AppSidebar() {
             />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white drop-shadow-sm">
-              Kortex System
+            <h1 className="text-base md:text-lg font-bold text-white drop-shadow-sm">
+              {t("app.title")}
             </h1>
-            <p className="text-xs text-white/80 font-medium">Rechnungsextraktion</p>
+            <p className="text-xs text-white/80 font-medium">{t("app.subtitle")}</p>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs md:text-sm">Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {

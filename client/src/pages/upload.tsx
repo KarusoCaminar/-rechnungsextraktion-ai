@@ -4,6 +4,7 @@ import { Upload as UploadIcon, FileText, X, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/use-translation";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
@@ -23,6 +24,7 @@ export default function Upload() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -45,8 +47,8 @@ export default function Upload() {
     onSuccess: (invoice) => {
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       toast({
-        title: "Erfolgreich hochgeladen",
-        description: "Die Rechnung wird jetzt verarbeitet.",
+        title: t("upload.success"),
+        description: t("upload.successDescription"),
       });
       
       // Notify parent window (for iframe integration)
@@ -68,7 +70,7 @@ export default function Upload() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Upload fehlgeschlagen",
+        title: t("upload.error"),
         description: error.message,
         variant: "destructive",
       });
@@ -89,14 +91,14 @@ export default function Upload() {
       const rejection = rejectedFiles[0];
       if (rejection.errors[0]?.code === 'file-too-large') {
         toast({
-          title: "Datei zu groß",
-          description: `Die Datei ist ${(rejection.file.size / 1024 / 1024).toFixed(1)} MB. Maximum sind 10 MB.`,
+          title: t("upload.fileTooLarge"),
+          description: t("upload.fileTooLargeDescription", { size: (rejection.file.size / 1024 / 1024).toFixed(1) }),
           variant: "destructive",
         });
       } else if (rejection.errors[0]?.code === 'file-invalid-type') {
         toast({
-          title: "Falsches Dateiformat",
-          description: "Bitte laden Sie nur JPG, PNG oder PDF Dateien hoch.",
+          title: t("upload.invalidType"),
+          description: t("upload.invalidTypeDescription"),
           variant: "destructive",
         });
       }
@@ -109,8 +111,8 @@ export default function Upload() {
       // Double-check file size
       if (file.size > 10 * 1024 * 1024) {
         toast({
-          title: "Datei zu groß",
-          description: `Die Datei ist ${(file.size / 1024 / 1024).toFixed(1)} MB. Maximum sind 10 MB.`,
+          title: t("upload.fileTooLarge"),
+          description: t("upload.fileTooLargeDescription", { size: (file.size / 1024 / 1024).toFixed(1) }),
           variant: "destructive",
         });
         return;
@@ -163,39 +165,39 @@ export default function Upload() {
       reader.readAsDataURL(file);
 
       toast({
-        title: "Beispielrechnung geladen",
-        description: "Klicken Sie auf 'Hochladen', um fortzufahren.",
+        title: t("upload.sampleLoaded"),
+        description: t("upload.sampleLoadedDescription"),
       });
     } catch (error) {
       toast({
-        title: "Fehler",
-        description: "Beispielrechnung konnte nicht geladen werden.",
+        title: t("upload.sampleError"),
+        description: t("upload.sampleErrorDescription"),
         variant: "destructive",
       });
     }
   };
 
   return (
-    <div className="p-6 space-y-8 relative">
+    <div className="p-4 md:p-6 space-y-6 md:space-y-8 relative">
       <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-1 h-10 bg-primary rounded-full"></div>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-[hsl(210_96%_40%)] bg-clip-text text-transparent">
-            Rechnung hochladen
+        <div className="flex items-center gap-2 md:gap-3 mb-2">
+          <div className="w-1 h-8 md:h-10 bg-primary rounded-full"></div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-[hsl(210_96%_40%)] bg-clip-text text-transparent">
+            {t("upload.title")}
           </h1>
         </div>
-        <p className="text-muted-foreground mt-2 ml-4">
-          Laden Sie eine Rechnung hoch oder wählen Sie ein Beispiel
+        <p className="text-muted-foreground mt-1 md:mt-2 ml-3 md:ml-4 text-sm md:text-base">
+          {t("upload.description")}
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-6">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
+        <div className="space-y-4 md:space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Datei hochladen</CardTitle>
+              <CardTitle>{t("upload.fileUpload")}</CardTitle>
               <CardDescription>
-                JPG, PNG oder PDF - Maximal 10 MB
+                {t("upload.fileTypes")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -203,7 +205,7 @@ export default function Upload() {
                 <div
                   {...getRootProps()}
                   className={`
-                    border-2 border-dashed rounded-xl p-12 text-center cursor-pointer
+                    border-2 border-dashed rounded-xl p-8 md:p-12 text-center cursor-pointer
                     transition-all duration-300 hover-elevate
                     bg-gradient-to-br from-primary/5 to-primary/10
                     backdrop-blur-sm
@@ -216,18 +218,18 @@ export default function Upload() {
                   data-testid="dropzone-upload"
                 >
                   <input {...getInputProps()} />
-                  <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 border-2 border-primary/20">
-                    <UploadIcon className="h-8 w-8 text-primary" />
+                  <div className="flex items-center justify-center w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 rounded-full bg-primary/10 border-2 border-primary/20">
+                    <UploadIcon className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                   </div>
                   {isDragActive ? (
-                    <p className="text-lg font-semibold text-primary">Hier ablegen...</p>
+                    <p className="text-base md:text-lg font-semibold text-primary">{t("upload.dropzoneActive")}</p>
                   ) : (
                     <>
-                      <p className="text-lg font-semibold mb-2 text-foreground">
-                        Datei hierher ziehen
+                      <p className="text-base md:text-lg font-semibold mb-2 text-foreground">
+                        {t("upload.dropzoneTitle")}
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        oder klicken Sie zum Auswählen
+                      <p className="text-xs md:text-sm text-muted-foreground">
+                        {t("upload.dropzoneSubtitle")}
                       </p>
                     </>
                   )}
@@ -266,12 +268,12 @@ export default function Upload() {
                     {uploadMutation.isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Wird hochgeladen...
+                        {t("upload.uploading")}
                       </>
                     ) : (
                       <>
                         <UploadIcon className="h-4 w-4" />
-                        Hochladen
+                        {t("upload.uploadButton")}
                       </>
                     )}
                   </Button>
@@ -282,18 +284,18 @@ export default function Upload() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Beispielrechnungen</CardTitle>
+              <CardTitle>{t("upload.sampleInvoices")}</CardTitle>
               <CardDescription>
-                Klicken Sie auf eine Beispielrechnung zum Testen
+                {t("upload.sampleDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-3">
+              <div className="grid gap-2 md:gap-3">
                 {sampleInvoices.map((sample) => (
                   <button
                     key={sample.id}
                     onClick={() => handleSampleClick(sample)}
-                    className="flex items-center gap-3 p-3 rounded-lg border hover-elevate active-elevate-2 text-left"
+                    className="flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-lg border hover-elevate active-elevate-2 text-left"
                     data-testid={`button-sample-${sample.id}`}
                   >
                     <div className="flex-shrink-0">
@@ -301,20 +303,20 @@ export default function Upload() {
                         <PDFThumbnail
                           fileData={sample.url}
                           fileName={sample.name}
-                          className="h-16 w-12"
+                          className="h-12 w-9 md:h-16 md:w-12"
                         />
                       ) : (
                         <img
                           src={sample.url}
                           alt={sample.name}
-                          className="h-16 w-12 object-cover rounded border"
+                          className="h-12 w-9 md:h-16 md:w-12 object-cover rounded border"
                         />
                       )}
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">{sample.name}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-xs md:text-sm truncate">{sample.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {sample.isPDF ? "PDF-Rechnung" : "JPG-Rechnung"}
+                        {sample.isPDF ? t("upload.pdfInvoice") : t("upload.jpgInvoice")}
                       </p>
                     </div>
                   </button>
@@ -327,7 +329,7 @@ export default function Upload() {
         {preview && (
           <Card>
             <CardHeader>
-              <CardTitle>Vorschau</CardTitle>
+              <CardTitle>{t("upload.preview")}</CardTitle>
             </CardHeader>
             <CardContent>
               {selectedFile?.type === "application/pdf" ? (

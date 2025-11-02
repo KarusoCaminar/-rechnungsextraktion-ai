@@ -65,9 +65,13 @@ const model = "gemini-2.5-flash";
 export interface ExtractedInvoiceData {
   invoiceNumber?: string;
   invoiceDate?: string; // German format DD.MM.YYYY
+  dueDate?: string; // Payment due date: DD.MM.YYYY
   supplierName?: string;
   supplierAddress?: string;
   supplierVatId?: string;
+  customerName?: string; // Customer/bill-to name
+  customerAddress?: string; // Customer/bill-to address
+  paymentTerms?: string; // e.g., "Net 30", "Due on receipt"
   subtotal?: string;
   vatRate?: string;
   vatAmount?: string;
@@ -108,9 +112,13 @@ Analyze this invoice document and extract the following information in JSON form
 {
   "invoiceNumber": "Invoice number (e.g. RE-2024-001, INV-12345)",
   "invoiceDate": "Invoice date in DD.MM.YYYY format",
+  "dueDate": "Payment due date in DD.MM.YYYY format (if present)",
   "supplierName": "Supplier/vendor name",
   "supplierAddress": "Complete supplier address",
   "supplierVatId": "VAT ID or tax number if present (e.g. DE123456789, GB123456789)",
+  "customerName": "Customer/bill-to name (if present)",
+  "customerAddress": "Customer/bill-to address (if present)",
+  "paymentTerms": "Payment terms (e.g. 'Net 30', 'Due on receipt', 'Zahlung binnen 30 Tagen')",
   "subtotal": "Net amount/subtotal as decimal number (e.g. 1234.56)",
   "vatRate": "VAT/tax rate as number (e.g. 19 for 19%, 20 for 20%)",
   "vatAmount": "VAT/tax amount as decimal number (e.g. 234.56)",
@@ -127,12 +135,14 @@ Analyze this invoice document and extract the following information in JSON form
 
 Important instructions:
 - ALL monetary amounts as decimal numbers with DOT (not comma) - e.g. 1234.56
-- Date in DD.MM.YYYY format regardless of original format
+- Dates in DD.MM.YYYY format regardless of original format
 - If a field is not found, set it to null
 - Extract ALL line items from the invoice
+- Extract customer information (bill-to) if present on the invoice
+- Extract payment due date and payment terms if visible
 - CRITICAL: For multi-page documents, focus on the FIRST PAGE with the main invoice
-- Ignore attachments, payment terms, or additional pages
-- Relevant data (amounts, line items, supplier) is usually on page 1
+- Ignore attachments or additional pages, but check page 1 thoroughly for all fields
+- Relevant data (amounts, line items, supplier, customer, payment info) is usually on page 1
 - Works for invoices in ANY language (German, English, French, etc.)
 
 CRITICAL OUTPUT REQUIREMENTS:

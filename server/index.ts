@@ -46,23 +46,15 @@ async function cleanupOldInvoices() {
 async function setupAutoDeleteJob() {
   const { storage } = await import("./storage");
   
-  // Run immediately on startup
-  try {
-    const deletedCount = await storage.deleteAllInvoices();
-    log(`🗑️ Auto-delete: Deleted all invoices on startup (${deletedCount} invoices removed)`);
-  } catch (error) {
-    log(`⚠️ Auto-delete error on startup: ${error}`);
-  }
-
-  // Then run every hour (3600000 ms)
+  // Run every hour (3600000 ms) - NOT on startup
   setInterval(async () => {
     try {
       const deletedCount = await storage.deleteAllInvoices();
-      log(`🗑️ Auto-delete: Deleted all invoices (${deletedCount} invoices removed)`);
+      log(`🗑️ Auto-delete (30min): Deleted all invoices (${deletedCount} invoices removed)`);
     } catch (error) {
       log(`⚠️ Auto-delete error: ${error}`);
     }
-  }, 60 * 60 * 1000); // 1 hour = 3600000 ms
+  }, 30 * 60 * 1000); // 30 minutes = 1800000 ms
 }
 
 // CORS Configuration for iframe embedding

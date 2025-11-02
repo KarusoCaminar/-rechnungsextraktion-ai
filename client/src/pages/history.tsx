@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PDFThumbnail } from "@/components/pdf-thumbnail";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/use-translation";
+import { i18n } from "@/lib/i18n";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import type { Invoice } from "@shared/schema";
 
 export default function History() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   
   // Check if there are any invoices being processed
   const hasProcessingInvoices = (invoices: Invoice[]) => 
@@ -33,14 +36,14 @@ export default function History() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       toast({
-        title: "Gelöscht",
-        description: "Rechnung wurde erfolgreich gelöscht.",
+        title: t("history.deleted"),
+        description: t("history.deletedDescription"),
       });
     },
     onError: () => {
       toast({
-        title: "Fehler",
-        description: "Rechnung konnte nicht gelöscht werden.",
+        title: t("history.deleteError"),
+        description: t("history.deleteErrorDescription"),
         variant: "destructive",
       });
     },
@@ -53,14 +56,17 @@ export default function History() {
       });
       
       if (!response.ok) {
-        throw new Error("Export fehlgeschlagen");
+        throw new Error(t("history.exportErrorDescription"));
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `rechnungen-export.${format}`;
+      const fileName = i18n.getLanguage() === "de" 
+        ? `rechnungen-export.${format}` 
+        : `invoices-export.${format}`;
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -68,14 +74,14 @@ export default function History() {
     },
     onSuccess: () => {
       toast({
-        title: "Exportiert",
-        description: "Daten wurden erfolgreich exportiert.",
+        title: t("history.exportSuccess"),
+        description: t("history.exportSuccessDescription"),
       });
     },
     onError: () => {
       toast({
-        title: "Fehler",
-        description: "Export fehlgeschlagen.",
+        title: t("history.exportError"),
+        description: t("history.exportErrorDescription"),
         variant: "destructive",
       });
     },
@@ -87,21 +93,21 @@ export default function History() {
         return (
           <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800">
             <CheckCircle className="h-3 w-3" />
-            Abgeschlossen
+            {t("history.status.completed")}
           </Badge>
         );
       case "processing":
         return (
           <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
             <Clock className="h-3 w-3" />
-            Verarbeitung
+            {t("history.status.processing")}
           </Badge>
         );
       case "error":
         return (
           <Badge variant="destructive">
             <XCircle className="h-3 w-3" />
-            Fehler
+            {t("history.status.error")}
           </Badge>
         );
       default:
@@ -110,43 +116,45 @@ export default function History() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Rechnungshistorie
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+            {t("history.title")}
           </h1>
-          <p className="text-muted-foreground mt-2">
-            Alle verarbeiteten Rechnungen
+          <p className="text-muted-foreground mt-1 md:mt-2 text-sm md:text-base">
+            {t("history.description")}
           </p>
         </div>
         {invoices.length > 0 && (
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
               onClick={() => exportMutation.mutate("csv")}
               disabled={exportMutation.isPending}
               data-testid="button-export-csv"
+              className="w-full sm:w-auto"
             >
               {exportMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Download className="h-4 w-4" />
               )}
-              CSV Export
+              {t("history.exportCSV")}
             </Button>
             <Button
               variant="outline"
               onClick={() => exportMutation.mutate("json")}
               disabled={exportMutation.isPending}
               data-testid="button-export-json"
+              className="w-full sm:w-auto"
             >
               {exportMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Download className="h-4 w-4" />
               )}
-              JSON Export
+              {t("history.exportJSON")}
             </Button>
           </div>
         )}
@@ -169,26 +177,28 @@ export default function History() {
           ))}
         </div>
       ) : invoices.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Keine Rechnungen vorhanden</h3>
-            <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
-              Laden Sie Ihre erste Rechnung hoch, um die Historie zu sehen.
+        <Card className="border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center py-8 md:py-12 px-4">
+            <div className="p-4 rounded-full bg-primary/10 mb-4">
+              <FileText className="h-12 w-12 md:h-16 md:w-16 text-primary" />
+            </div>
+            <h3 className="text-lg md:text-xl font-semibold mb-2 text-center">{t("history.noInvoices")}</h3>
+            <p className="text-sm md:text-base text-muted-foreground text-center max-w-md mb-6">
+              {t("history.noInvoicesDescription")}
             </p>
-            <Link href="/upload">
-              <Button data-testid="button-goto-upload">
-                Rechnung hochladen
+            <Link href="/">
+              <Button data-testid="button-goto-upload" size="lg" className="w-full sm:w-auto">
+                {t("upload.title")}
               </Button>
             </Link>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {invoices.map((invoice) => (
             <Card key={invoice.id} className="hover-elevate" data-testid={`card-invoice-${invoice.id}`}>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex items-start gap-3 md:gap-4">
                   <div className="flex-shrink-0">
                     {invoice.fileType.startsWith("image/") ? (
                       <img
@@ -211,7 +221,7 @@ export default function History() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4 mb-3">
                       <div>
-                        <h3 className="font-semibold text-lg mb-1" data-testid={`text-invoice-number-${invoice.id}`}>
+                        <h3 className="font-semibold text-base md:text-lg mb-1 truncate" data-testid={`text-invoice-number-${invoice.id}`}>
                           {invoice.invoiceNumber || invoice.fileName}
                         </h3>
                         {invoice.supplierName && (
@@ -223,18 +233,18 @@ export default function History() {
                       {getStatusBadge(invoice.status)}
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-4">
                       {invoice.invoiceDate && (
                         <div>
-                          <p className="text-xs text-muted-foreground">Datum</p>
+                          <p className="text-xs text-muted-foreground">{t("history.date")}</p>
                           <p className="text-sm font-medium">{invoice.invoiceDate}</p>
                         </div>
                       )}
                       {invoice.totalAmount && (
                         <div>
-                          <p className="text-xs text-muted-foreground">Gesamt</p>
+                          <p className="text-xs text-muted-foreground">{t("history.total")}</p>
                           <p className="text-sm font-medium tabular-nums">
-                            {parseFloat(invoice.totalAmount).toLocaleString("de-DE", {
+                            {parseFloat(invoice.totalAmount).toLocaleString(i18n.getLanguage() === "en" ? "en-US" : "de-DE", {
                               style: "currency",
                               currency: "EUR",
                             })}
@@ -243,9 +253,9 @@ export default function History() {
                       )}
                       {invoice.vatAmount && (
                         <div>
-                          <p className="text-xs text-muted-foreground">MwSt.</p>
+                          <p className="text-xs text-muted-foreground">{t("invoice.vatAmount")}</p>
                           <p className="text-sm font-medium tabular-nums">
-                            {parseFloat(invoice.vatAmount).toLocaleString("de-DE", {
+                            {parseFloat(invoice.vatAmount).toLocaleString(i18n.getLanguage() === "en" ? "en-US" : "de-DE", {
                               style: "currency",
                               currency: "EUR",
                             })}
@@ -254,7 +264,7 @@ export default function History() {
                       )}
                       {invoice.vatRate && (
                         <div>
-                          <p className="text-xs text-muted-foreground">MwSt.-Satz</p>
+                          <p className="text-xs text-muted-foreground">{t("invoice.vatRate")}</p>
                           <p className="text-sm font-medium">{invoice.vatRate}%</p>
                         </div>
                       )}
@@ -265,7 +275,7 @@ export default function History() {
                         <div className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin text-yellow-600 dark:text-yellow-400" />
                           <p className="text-sm text-yellow-800 dark:text-yellow-400">
-                            KI extrahiert Rechnungsdaten... Wird automatisch aktualisiert.
+                            {t("invoice.loading")}
                           </p>
                         </div>
                       </div>
@@ -277,11 +287,11 @@ export default function History() {
                       </div>
                     )}
 
-                    <div className="flex gap-2">
-                      <Link href={`/invoice/${invoice.id}`}>
-                        <Button variant="outline" size="sm" data-testid={`button-view-${invoice.id}`}>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Link href={`/invoice/${invoice.id}`} className="flex-1">
+                        <Button variant="outline" size="sm" data-testid={`button-view-${invoice.id}`} className="w-full sm:w-auto">
                           <Eye className="h-4 w-4" />
-                          Details
+                          {t("history.view")}
                         </Button>
                       </Link>
                       <Button
@@ -290,9 +300,10 @@ export default function History() {
                         onClick={() => deleteMutation.mutate(invoice.id)}
                         disabled={deleteMutation.isPending}
                         data-testid={`button-delete-${invoice.id}`}
+                        className="w-full sm:w-auto sm:flex-1"
                       >
                         <Trash2 className="h-4 w-4" />
-                        Löschen
+                        {t("history.delete")}
                       </Button>
                     </div>
                   </div>

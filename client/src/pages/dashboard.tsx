@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { FileText, CheckCircle, Clock, AlertCircle, Trash2 } from "lucide-react";
+import { FileText, CheckCircle, Clock, AlertCircle, Trash2, Upload as UploadIcon, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,12 +14,17 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/use-translation";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
+import { i18n } from "@/lib/i18n";
 import type { Invoice } from "@shared/schema";
 
 export default function Dashboard() {
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const [, setLocation] = useLocation();
   
   const { data: invoices = [], isLoading } = useQuery<Invoice[]>({
     queryKey: ["/api/invoices"],
@@ -38,28 +43,28 @@ export default function Dashboard() {
 
   const statCards = [
     {
-      title: "Gesamt Rechnungen",
+      title: t("dashboard.totalInvoices"),
       value: stats.total,
       icon: FileText,
       color: "text-primary",
       bgColor: "bg-primary/10",
     },
     {
-      title: "Abgeschlossen",
+      title: t("dashboard.completed"),
       value: stats.completed,
       icon: CheckCircle,
       color: "text-green-600",
       bgColor: "bg-green-100 dark:bg-green-900/20",
     },
     {
-      title: "In Bearbeitung",
+      title: t("dashboard.processing"),
       value: stats.processing,
       icon: Clock,
       color: "text-yellow-600",
       bgColor: "bg-yellow-100 dark:bg-yellow-900/20",
     },
     {
-      title: "Fehler",
+      title: t("dashboard.errors"),
       value: stats.errors,
       icon: AlertCircle,
       color: "text-destructive",
@@ -75,60 +80,67 @@ export default function Dashboard() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/invoices"] });
       toast({
-        title: "Alle Rechnungen gelöscht",
-        description: `${data.deletedCount || stats.total} Rechnung(en) wurden erfolgreich gelöscht.`,
+        title: t("dashboard.deleteSuccess"),
+        description: t("dashboard.deleteSuccessDescription", { count: data.deletedCount || stats.total }),
       });
     },
     onError: () => {
       toast({
-        title: "Fehler",
-        description: "Rechnungen konnten nicht gelöscht werden.",
+        title: t("dashboard.deleteError"),
+        description: t("dashboard.deleteErrorDescription"),
         variant: "destructive",
       });
     },
   });
 
   return (
-    <div className="p-6 space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 space-y-6 md:space-y-8">
+      {/* Simplified Header with CTA */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Dashboard
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+            {t("dashboard.title")}
           </h1>
-          <p className="text-muted-foreground mt-2">
-            Übersicht Ihrer Rechnungsverarbeitung
+          <p className="text-muted-foreground mt-1 md:mt-2 text-sm md:text-base">
+            {t("dashboard.description")}
           </p>
         </div>
-        {stats.total > 0 && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Alle löschen
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Alle Rechnungen löschen?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Möchten Sie wirklich alle {stats.total} Rechnung(en) löschen? 
-                  Diese Aktion kann nicht rückgängig gemacht werden. Die Rechnungen werden 
-                  automatisch nach 1 Stunde gelöscht, um Ihre Privatsphäre zu schützen.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => deleteAllMutation.mutate()}
-                  disabled={deleteAllMutation.isPending}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {deleteAllMutation.isPending ? "Lösche..." : "Alle löschen"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
+        <div className="flex gap-2">
+          {stats.total === 0 && (
+            <Button onClick={() => setLocation("/")} className="w-full sm:w-auto">
+              <UploadIcon className="h-4 w-4 mr-2" />
+              {t("upload.title")}
+            </Button>
+          )}
+          {stats.total > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="w-full sm:w-auto">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {t("dashboard.deleteAll")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="max-w-md">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("dashboard.deleteAllConfirm")}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t("dashboard.deleteAllDescription", { count: stats.total })}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => deleteAllMutation.mutate()}
+                    disabled={deleteAllMutation.isPending}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deleteAllMutation.isPending ? t("dashboard.deleting") : t("dashboard.deleteAll")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
@@ -146,19 +158,19 @@ export default function Dashboard() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-2 xl:grid-cols-4">
           {statCards.map((stat) => (
             <Card key={stat.title} className="hover-elevate" data-testid={`stat-${stat.title.toLowerCase().replace(/\s+/g, "-")}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                <div className={`p-1.5 md:p-2 rounded-lg ${stat.bgColor}`}>
+                  <stat.icon className={`h-4 w-4 md:h-5 md:w-5 ${stat.color}`} />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold tabular-nums" data-testid={`stat-value-${stat.title.toLowerCase().replace(/\s+/g, "-")}`}>
+                <div className="text-2xl md:text-3xl font-bold tabular-nums" data-testid={`stat-value-${stat.title.toLowerCase().replace(/\s+/g, "-")}`}>
                   {stat.value}
                 </div>
               </CardContent>
@@ -170,15 +182,15 @@ export default function Dashboard() {
       {stats.completed > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Finanzübersicht</CardTitle>
+            <CardTitle>{t("dashboard.financialOverview")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Gesamtsumme (abgeschlossene Rechnungen)
+                {t("dashboard.totalAmount")}
               </p>
-              <p className="text-4xl font-bold tabular-nums" data-testid="text-total-amount">
-                {totalAmount.toLocaleString("de-DE", {
+              <p className="text-3xl md:text-4xl font-bold tabular-nums" data-testid="text-total-amount">
+                {totalAmount.toLocaleString(i18n.getLanguage() === "en" ? "en-US" : "de-DE", {
                   style: "currency",
                   currency: "EUR",
                 })}
@@ -189,13 +201,20 @@ export default function Dashboard() {
       )}
 
       {stats.total === 0 && !isLoading && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Keine Rechnungen vorhanden</h3>
-            <p className="text-sm text-muted-foreground text-center max-w-md">
-              Laden Sie Ihre erste Rechnung hoch, um mit der automatischen Extraktion zu beginnen.
+        <Card className="border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center py-8 md:py-12 px-4">
+            <div className="p-4 rounded-full bg-primary/10 mb-4">
+              <FileText className="h-12 w-12 md:h-16 md:w-16 text-primary" />
+            </div>
+            <h3 className="text-lg md:text-xl font-semibold mb-2 text-center">{t("dashboard.noInvoices")}</h3>
+            <p className="text-sm md:text-base text-muted-foreground text-center max-w-md mb-6">
+              {t("dashboard.noInvoicesDescription")}
             </p>
+            <Button onClick={() => setLocation("/")} size="lg" className="w-full sm:w-auto">
+              <UploadIcon className="h-4 w-4 mr-2" />
+              {t("upload.title")}
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
           </CardContent>
         </Card>
       )}
