@@ -7,6 +7,9 @@ vite.config.ts.*
 .local/
 *.zip
 
+# Old/Backup folders
+extracted_app/
+
 # Environment Variables & Secrets
 .env
 .env.local
