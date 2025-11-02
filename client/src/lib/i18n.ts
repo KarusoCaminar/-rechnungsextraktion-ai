@@ -266,25 +266,33 @@ class I18n {
     this.detectLanguage();
   }
 
-  private detectLanguage(): void {
-    // Method 1: Check parent window (for iframe integration)
+  detectLanguage(): void {
+    // Method 1: Check URL parameter (highest priority for webhook integration)
+    const urlParams = new URLSearchParams(window.location.search);
+    const langParam = urlParams.get("lang");
+    if (langParam && (langParam === "de" || langParam === "en")) {
+      this.currentLanguage = langParam as Language;
+      // Save to localStorage for consistency
+      localStorage.setItem("language", this.currentLanguage);
+      document.documentElement.lang = this.currentLanguage;
+      document.documentElement.setAttribute("data-lang", this.currentLanguage);
+      return; // Early return if URL param found
+    }
+
+    // Method 2: Check parent window (for iframe integration)
     try {
       if (window.parent !== window) {
         // Check if parent has language info
         const parentLang = window.parent.document.documentElement.lang || 
                           window.parent.document.documentElement.getAttribute("data-lang") ||
                           window.parent.navigator.language;
-        this.currentLanguage = this.parseLanguage(parentLang);
+        const detectedLang = this.parseLanguage(parentLang);
+        if (detectedLang) {
+          this.currentLanguage = detectedLang;
+        }
       }
     } catch (e) {
       // Cross-origin, can't access parent
-    }
-
-    // Method 2: Check URL parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const langParam = urlParams.get("lang");
-    if (langParam && (langParam === "de" || langParam === "en")) {
-      this.currentLanguage = langParam as Language;
     }
 
     // Method 3: Check localStorage
@@ -293,7 +301,7 @@ class I18n {
       this.currentLanguage = storedLang as Language;
     }
 
-    // Method 4: Check browser language
+    // Method 4: Check browser language (fallback)
     if (!storedLang && !langParam) {
       const browserLang = navigator.language || (navigator as any).userLanguage;
       this.currentLanguage = this.parseLanguage(browserLang);

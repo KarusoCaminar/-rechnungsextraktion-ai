@@ -1,6 +1,7 @@
 import { Home, Upload, History, FileText } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useTranslation } from "@/hooks/use-translation";
+import { useSidebar } from "@/components/ui/sidebar";
 
 import {
   Sidebar,
@@ -17,6 +18,7 @@ import {
 export function AppSidebar() {
   const [location] = useLocation();
   const { t } = useTranslation();
+  const { setOpenMobile, isMobile } = useSidebar();
 
   const menuItems = [
     {
@@ -73,7 +75,17 @@ export function AppSidebar() {
                 const isActive = location === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive} data-testid={`nav-${item.title.toLowerCase()}`}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={isActive} 
+                      data-testid={`nav-${item.title.toLowerCase()}`}
+                      onClick={() => {
+                        // Automatically close sidebar on mobile when navigating
+                        if (isMobile) {
+                          setOpenMobile(false);
+                        }
+                      }}
+                    >
                       <Link href={item.url}>
                         <item.icon className="w-5 h-5" />
                         <span>{item.title}</span>

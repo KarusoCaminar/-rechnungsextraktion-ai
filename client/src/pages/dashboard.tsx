@@ -186,10 +186,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs md:text-sm text-muted-foreground">
                 {t("dashboard.totalAmount")}
               </p>
-              <p className="text-3xl md:text-4xl font-bold tabular-nums" data-testid="text-total-amount">
+              <p className="text-2xl md:text-3xl lg:text-4xl font-bold tabular-nums break-all" data-testid="text-total-amount">
                 {totalAmount.toLocaleString(i18n.getLanguage() === "en" ? "en-US" : "de-DE", {
                   style: "currency",
                   currency: "EUR",

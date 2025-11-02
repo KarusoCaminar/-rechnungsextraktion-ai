@@ -162,23 +162,23 @@ export default function InvoiceDetail() {
                 <CardTitle>Rechnungspositionen</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full">
+                <div className="border rounded-lg overflow-hidden overflow-x-auto">
+                  <table className="w-full min-w-[400px]">
                     <thead className="bg-muted/50 border-b">
                       <tr>
-                        <th className="text-left p-3 text-sm font-medium">Beschreibung</th>
-                        <th className="text-right p-3 text-sm font-medium">Menge</th>
-                        <th className="text-right p-3 text-sm font-medium">Einzelpreis</th>
-                        <th className="text-right p-3 text-sm font-medium">Gesamt</th>
+                        <th className="text-left p-2 md:p-3 text-xs md:text-sm font-medium">Beschreibung</th>
+                        <th className="text-right p-2 md:p-3 text-xs md:text-sm font-medium w-16 md:w-auto">Menge</th>
+                        <th className="text-right p-2 md:p-3 text-xs md:text-sm font-medium w-24 md:w-auto">Einzelpreis</th>
+                        <th className="text-right p-2 md:p-3 text-xs md:text-sm font-medium w-24 md:w-auto">Gesamt</th>
                       </tr>
                     </thead>
                     <tbody>
                       {invoice.lineItems.map((item, index) => (
                         <tr key={index} className="border-b last:border-0">
-                          <td className="p-3 text-sm">{item.description}</td>
-                          <td className="p-3 text-sm text-right tabular-nums">{item.quantity}</td>
-                          <td className="p-3 text-sm text-right tabular-nums">{item.unitPrice}</td>
-                          <td className="p-3 text-sm text-right tabular-nums font-medium">{item.total}</td>
+                          <td className="p-2 md:p-3 text-xs md:text-sm min-w-0 max-w-[200px] truncate">{item.description}</td>
+                          <td className="p-2 md:p-3 text-xs md:text-sm text-right tabular-nums whitespace-nowrap">{item.quantity}</td>
+                          <td className="p-2 md:p-3 text-xs md:text-sm text-right tabular-nums whitespace-nowrap">{item.unitPrice}</td>
+                          <td className="p-2 md:p-3 text-xs md:text-sm text-right tabular-nums font-medium whitespace-nowrap">{item.total}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -237,9 +237,9 @@ export default function InvoiceDetail() {
             </CardHeader>
             <CardContent className="space-y-3">
               {invoice.subtotal && (
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-muted-foreground">Zwischensumme</p>
-                  <p className="font-medium tabular-nums">
+                <div className="flex justify-between items-center gap-2 min-w-0">
+                  <p className="text-xs md:text-sm text-muted-foreground flex-shrink-0">Zwischensumme</p>
+                  <p className="font-medium tabular-nums text-sm md:text-base truncate text-right">
                     {parseFloat(invoice.subtotal).toLocaleString("de-DE", {
                       style: "currency",
                       currency: "EUR",
@@ -248,9 +248,9 @@ export default function InvoiceDetail() {
                 </div>
               )}
               {invoice.vatRate && invoice.vatAmount && (
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-muted-foreground">MwSt. ({invoice.vatRate}%)</p>
-                  <p className="font-medium tabular-nums">
+                <div className="flex justify-between items-center gap-2 min-w-0">
+                  <p className="text-xs md:text-sm text-muted-foreground flex-shrink-0">MwSt. ({invoice.vatRate}%)</p>
+                  <p className="font-medium tabular-nums text-sm md:text-base truncate text-right">
                     {parseFloat(invoice.vatAmount).toLocaleString("de-DE", {
                       style: "currency",
                       currency: "EUR",
@@ -261,9 +261,9 @@ export default function InvoiceDetail() {
               {invoice.totalAmount && (
                 <>
                   <div className="border-t pt-3">
-                    <div className="flex justify-between items-center">
-                      <p className="font-semibold">Gesamtsumme</p>
-                      <p className="text-2xl font-bold tabular-nums" data-testid="text-total-amount">
+                    <div className="flex justify-between items-center gap-2 min-w-0">
+                      <p className="font-semibold text-sm md:text-base flex-shrink-0">Gesamtsumme</p>
+                      <p className="text-lg md:text-2xl font-bold tabular-nums truncate text-right" data-testid="text-total-amount">
                         {parseFloat(invoice.totalAmount).toLocaleString("de-DE", {
                           style: "currency",
                           currency: "EUR",
